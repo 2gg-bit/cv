@@ -1,0 +1,19 @@
+# 数据集
+data/
+gbi_outputs/
+
+# checkpoint 和训练产物
+work_dirs/
+*.pth
+*.log
+*.log.json
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# 其他
+.claude/
+.DS_Store
