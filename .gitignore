@@ -5,7 +5,6 @@ gbi_outputs/
 # checkpoint 和训练产物
 work_dirs/
 *.pth
-*.log
 *.log.json
 
 # Python 缓存
