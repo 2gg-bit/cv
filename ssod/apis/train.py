@@ -21,6 +21,7 @@ from mmdet.datasets import build_dataset, replace_ImageToTensor
 from ssod.datasets import build_dataloader
 from ssod.utils import find_latest_checkpoint, get_root_logger, patch_runner
 from ssod.utils.hooks import DistEvalHook
+from ssod.utils.checkpoint import load_or_initialize_model
 
 
 def set_random_seed(seed, deterministic=False):
@@ -199,8 +200,7 @@ def train_detector(
     if resume_from is not None:
         cfg.resume_from = resume_from
 
-    if cfg.resume_from:
-        runner.resume(cfg.resume_from)
-    elif cfg.load_from:
-        runner.load_checkpoint(cfg.load_from)
+    load_or_initialize_model(
+        runner, resume_from=cfg.resume_from, load_from=cfg.load_from
+    )
     runner.run(data_loaders, cfg.workflow)

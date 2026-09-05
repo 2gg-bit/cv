@@ -5,89 +5,44 @@ from mmdet.core import bbox2roi, multi_apply
 from mmdet.models import DETECTORS, build_detector
 
 from ssod.utils.structure_utils import dict_split, weighted_loss
-from ssod.utils import log_image_with_boxes, log_every_n
+from ssod.utils import get_root_logger, log_image_with_boxes, log_every_n
+from ssod.utils.checkpoint import load_branch_weights
 
 from .multi_stream_detector import MultiSteamDetector
 from .utils import Transform2D, filter_invalid
 
-from ssod.utils.ensemble_boxes import weighted_boxes_fusion, nms
+from ssod.utils.ensemble_boxes import nms
 
 
-def compute_iou_matrix(boxes1, boxes2):
-    """Vectorized IoU matrix between two sets of xyxy boxes (numpy)."""
-    if boxes1.shape[0] == 0 or boxes2.shape[0] == 0:
-        return np.zeros((boxes1.shape[0], boxes2.shape[0]), dtype=np.float32)
-    x1 = np.maximum(boxes1[:, None, 0], boxes2[None, :, 0])
-    y1 = np.maximum(boxes1[:, None, 1], boxes2[None, :, 1])
-    x2 = np.minimum(boxes1[:, None, 2], boxes2[None, :, 2])
-    y2 = np.minimum(boxes1[:, None, 3], boxes2[None, :, 3])
-    inter = np.clip(x2 - x1, 0, None) * np.clip(y2 - y1, 0, None)
-    area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
-    area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
-    union = area1[:, None] + area2[None, :] - inter
-    return inter / np.maximum(union, 1e-9)
+def fuse_teacher_proposals(proposals1, labels1, proposals2, labels2):
+    """Author-code NMS fusion, without consensus score boosting.
 
-
-def consensus_fusion(boxes1, scores1, labels1, boxes2, scores2, labels2,
-                     iou_thr=0.5, single_scale1=0.7, single_scale2=0.9):
-    """共识门控融合：两教师都同意的框加分合并，单教师看到的框降权。"""
-    if boxes1.shape[0] == 0 and boxes2.shape[0] == 0:
-        return boxes1, scores1, labels1
-    if boxes1.shape[0] == 0:
-        return boxes2, scores2 * single_scale2, labels2
-    if boxes2.shape[0] == 0:
-        return boxes1, scores1 * single_scale1, labels1
-
-    iou = compute_iou_matrix(boxes1, boxes2)
-    matched1 = np.full(boxes1.shape[0], -1, dtype=np.int64)
-    matched2 = np.full(boxes2.shape[0], -1, dtype=np.int64)
-
-    # 按 IoU 从大到小贪心匹配（类别必须一致）
-    pairs = []
-    for i in range(boxes1.shape[0]):
-        for j in range(boxes2.shape[0]):
-            if labels1[i] == labels2[j] and iou[i, j] >= iou_thr:
-                pairs.append((iou[i, j], i, j))
-    pairs.sort(key=lambda x: -x[0])
-    for _, i, j in pairs:
-        if matched1[i] == -1 and matched2[j] == -1:
-            matched1[i] = j
-            matched2[j] = i
-
-    fused_boxes, fused_scores, fused_labels = [], [], []
-    for i in range(boxes1.shape[0]):
-        j = matched1[i]
-        if j >= 0:
-            w1, w2 = float(scores1[i]), float(scores2[j])
-            # 坐标：用分数更高的教师框（不加权平均，避免几何破坏）
-            if w1 >= w2:
-                fused_boxes.append(boxes1[i])
-            else:
-                fused_boxes.append(boxes2[j])
-            # 概率 OR：两教师同意 → 置信度提升
-            fused_scores.append(1.0 - (1.0 - w1) * (1.0 - w2))
-            fused_labels.append(int(labels1[i]))
+    The released DualTeacher code uses IoU=0 for pseudo-label fusion (not
+    the detector's own NMS). Keep that baseline setting and its empty-side
+    passthrough behavior. Process each image independently.
+    """
+    if not (len(proposals1) == len(labels1) == len(proposals2) == len(labels2)):
+        raise ValueError("Teacher proposal batch sizes must match")
+    fused_proposals, fused_labels = [], []
+    for first, first_labels, second, second_labels in zip(
+        proposals1, labels1, proposals2, labels2
+    ):
+        if len(first) == 0:
+            proposal, label = second, second_labels
+        elif len(second) == 0:
+            proposal, label = first, first_labels
         else:
-            fused_boxes.append(boxes1[i])
-            fused_scores.append(float(scores1[i]) * single_scale1)
-            fused_labels.append(int(labels1[i]))
-    for j in range(boxes2.shape[0]):
-        if matched2[j] == -1:
-            fused_boxes.append(boxes2[j])
-            fused_scores.append(float(scores2[j]) * single_scale2)
-            fused_labels.append(int(labels2[j]))
-
-    if len(fused_boxes) == 0:
-        return (np.zeros((0, 4), dtype=np.float32),
-                np.zeros((0,), dtype=np.float32),
-                np.zeros((0,), dtype=np.int64))
-
-    boxes = np.stack(fused_boxes).astype(np.float32)
-    scores = np.asarray(fused_scores, dtype=np.float32)
-    labels = np.asarray(fused_labels, dtype=np.int64)
-    # 最后用普通 NMS 去重（复用文件里已 import 的 nms），iou_thr=0 与原版一致
-    fb, fs, fl = nms([boxes.tolist()], [scores.tolist()], [labels.tolist()], iou_thr=0)
-    return np.asarray(fb, dtype=np.float32), np.asarray(fs, dtype=np.float32), np.asarray(fl, dtype=np.int64)
+            boxes, scores, labels = nms(
+                [first[:, :4].detach().cpu().numpy(), second[:, :4].detach().cpu().numpy()],
+                [first[:, 4].detach().cpu().numpy(), second[:, 4].detach().cpu().numpy()],
+                [first_labels.detach().cpu().numpy(), second_labels.detach().cpu().numpy()],
+                iou_thr=0,
+            )
+            proposal = first.new_tensor(np.column_stack((boxes, scores)))
+            label = first_labels.new_tensor(labels)
+        fused_proposals.append(proposal)
+        fused_labels.append(label)
+    return fused_proposals, fused_labels
 
 
 @DETECTORS.register_module()
@@ -103,14 +58,44 @@ class DualTeacher(MultiSteamDetector):
             train_cfg=train_cfg,
             test_cfg=test_cfg,
         )
+        self._pretrained_initialized = False
         if train_cfg is not None:
             self.freeze("teacher1")
             self.freeze("teacher2")
             self.unsup_weight = self.train_cfg.unsup_weight
-            self.load1_from = self.train_cfg.load1_from
-            self.load2_from = self.train_cfg.load2_from
-            self.state_dict1 = torch.load(self.load1_from)['state_dict']
-            self.state_dict2 = torch.load(self.load2_from)['state_dict']
+            self.load1_from = self.train_cfg.get("load1_from")
+            self.load2_from = self.train_cfg.get("load2_from")
+
+    def init_from_pretrained(self):
+        """Explicitly initialize a fresh run, after generic init_weights.
+
+        train_detector calls this only when not loading/resuming a full-run
+        checkpoint. Construction and inference never read Phase 1/2 files.
+        """
+        if self._pretrained_initialized:
+            return
+        if self.train_cfg is None:
+            raise RuntimeError("Phase initialization requires a training config")
+        logger = get_root_logger()
+        load_branch_weights(
+            self.load1_from,
+            [("teacher1", self.teacher1), ("student1", self.student1)],
+            logger,
+        )
+        load_branch_weights(
+            self.load2_from,
+            [("teacher2", self.teacher2), ("student2", self.student2)],
+            logger,
+        )
+        first, second = self.teacher1.state_dict(), self.teacher2.state_dict()
+        if all(torch.equal(first[key], second[key]) for key in first):
+            raise RuntimeError(
+                "Phase 1/2 initialized identical branches; check load1_from/load2_from"
+            )
+        self._pretrained_initialized = True
+        logger.info(
+            "[DualTeacher init] PASS: T1=S1, T2=S2, T1!=T2; fusion=NMS, fusion_iou=0"
+        )
 
     def forward_train(self, img, img_metas, **kwargs):
         super().forward_train(img, img_metas, **kwargs)
@@ -270,27 +255,8 @@ class DualTeacher(MultiSteamDetector):
             self.get_det_bboxes('teacher1', img, img_metas, proposals=None, **kwargs)
         feat2, proposal2_list, proposal2_label_list, det2_bboxes, teacher2_info = \
             self.get_det_bboxes('teacher2', img, img_metas, proposals=None, **kwargs)
-        # ---- Module 4: consensus-aware fusion (replaces plain NMS) ----
-        boxes1 = proposal1_list[0][:, 0:4].detach().cpu().numpy()
-        scores1 = proposal1_list[0][:, 4].detach().cpu().numpy()
-        labels1 = np.asarray([int(l) for l in proposal1_label_list[0]])
-        boxes2 = proposal2_list[0][:, 0:4].detach().cpu().numpy()
-        scores2 = proposal2_list[0][:, 4].detach().cpu().numpy()
-        labels2 = np.asarray([int(l) for l in proposal2_label_list[0]])
-
-        boxes, scores, labels = consensus_fusion(
-            boxes1, scores1, labels1, boxes2, scores2, labels2,
-            iou_thr=self.train_cfg.get("consensus_iou_thr", 0.5),
-            single_scale1=self.train_cfg.get("consensus_single_scale1", 0.7),
-            single_scale2=self.train_cfg.get("consensus_single_scale2", 0.9),
-        )
-        proposal_list = (
-            torch.from_numpy(np.hstack((boxes, scores.reshape(-1, 1))))
-            .float()
-            .to(feat1[0][0].device),
-        )
-        proposal_label_list = (
-            torch.from_numpy(labels).long().to(feat1[0][0].device),
+        proposal_list, proposal_label_list = fuse_teacher_proposals(
+            proposal1_list, proposal1_label_list, proposal2_list, proposal2_label_list
         )
 
         reg1_unc = self.compute_uncertainty_with_aug_1(
@@ -323,7 +289,7 @@ class DualTeacher(MultiSteamDetector):
         ]
         teacher2_info["img_metas"] = img_metas
 
-        reg_unc = [(reg1_unc[0] + reg2_unc[0]) * 0.5]
+        reg_unc = [(first + second) * 0.5 for first, second in zip(reg1_unc, reg2_unc)]
         det_bboxes = [
             torch.cat([bbox, unc], dim=-1) for bbox, unc in zip(proposal_list, reg_unc)
         ]
@@ -782,28 +748,16 @@ class DualTeacher(MultiSteamDetector):
         unexpected_keys,
         error_msgs,
     ):
-        keys = list(state_dict.keys())
-        if not any(["student1" in key or "teacher1" in key or "student2" in key or "teacher2" in key for key in keys]):
-            for k in keys:
-                state_dict.pop(k)
-            if not any(["student" in key or "teacher" in key for key in self.state_dict1.keys()]):
-                keys = list(self.state_dict1.keys())
-                state_dict.update({"teacher1." + k: self.state_dict1[k] for k in keys})
-                state_dict.update({"student1." + k: self.state_dict1[k] for k in keys})
-            if not any(["student" in key or "teacher" in key for key in self.state_dict2.keys()]):
-                keys = list(self.state_dict2.keys())
-                state_dict.update({"teacher2." + k: self.state_dict2[k] for k in keys})
-                state_dict.update({"student2." + k: self.state_dict2[k] for k in keys})
-
-        # else:
-        #     keys = list(state_dict.keys())
-        #     for k in keys:
-        #         if "teacher" in k:
-        #             state_dict.update({k.replace("teacher", "teacher1"): state_dict[k]})
-        #             state_dict.update({k.replace("teacher", "student1"): state_dict[k]})
-        #     for k in keys:
-        #         state_dict.pop(k)
-
+        # Full-run checkpoint loading must never silently substitute Phase 1/2
+        # files or require their presence when evaluating a trained detector.
+        if not all(
+            any(key.startswith(prefix + name + ".") for key in state_dict)
+            for name in self.submodules
+        ):
+            raise RuntimeError(
+                "DualTeacher load/resume requires a full four-branch checkpoint. "
+                "For a fresh run, set load_from=None and use load1_from/load2_from."
+            )
         return super()._load_from_state_dict(
             state_dict,
             prefix,

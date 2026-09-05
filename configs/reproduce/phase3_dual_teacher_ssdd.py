@@ -2,21 +2,21 @@
 Phase 3: Dual Teacher training on DIOR (optical) + SSDD (SAR).
 
 This is the main semi-supervised cross-domain training phase.
-- T1/S1: initialized from Phase 1 (DIOR optical pretrain, 2000 iter)
-- T2/S2: initialized from Phase 2 (DIOR + few-shot SAR pretrain, 2800 iter)
+- T1/S1: initialized from Phase 1 (DIOR optical pretrain, 8000 iter)
+- T2/S2: initialized from Phase 2 (DIOR + few-shot SAR pretrain, 11200 iter)
 - sup1: DIOR labeled optical images (2706 images, 62533 ship boxes)
 - sup2: few-shot labeled SAR images (1/3/5/10)
 - unsup: unlabeled SAR images
 
-论文原始参数 (4× Quadro RTX 6000):
-  - lr=0.01, batch=12, max_iters=8000
-  - 无 lr decay (step=[120000,160000] >> max_iters)
-  - 无 warmup, fp16=dynamic, unsup_weight=2.0
+原文明确的参数 (4× Quadro RTX 6000):
+  - lr=0.01, unsup_weight=2.0
   - EMA momentum=0.999 (beta)
 
-单 GPU 适配:
+当前单 GPU 适配（保留本次三个 fold 的训练日程）:
   - lr=0.0025 (线性缩放 0.01 × 3/12), batch=3
-  - warmup=500, grad_clip=35, fp16=dynamic
+  - warmup=500, grad_clip=35, fp16=dynamic, max_iters=32000
+  - 无 lr decay；此适配不代表与四卡优化过程严格等价
+  - 恢复作者代码 NMS 融合（IoU=0），不进行共识置信度加分
 
 Usage:
     python -m torch.distributed.launch --nproc_per_node=1 \
@@ -63,9 +63,6 @@ semi_wrapper = dict(
         rpn_pseudo_threshold=0.9,
         cls_pseudo_threshold=0.9,
         reg_pseudo_threshold=0.02,
-        consensus_iou_thr=0.5,
-        consensus_single_scale1=1.0,
-        consensus_single_scale2=1.0,
         jitter_times=10,
         jitter_scale=0.06,
         min_pseduo_box_size=0,
@@ -127,7 +124,7 @@ data = dict(
 )
 
 # ============================================================
-# EMA hook: beta=0.999, no warmup
+# EMA hook: maximum beta=0.999; keep the existing hook's early-step ramp
 # ============================================================
 custom_hooks = [
     dict(type="NumClassCheckHook"),
@@ -138,7 +135,6 @@ custom_hooks = [
 # ============================================================
 # Training schedule
 # ============================================================
-# 论文: max_iters=8000, lr=0.01 (constant, step>>max_iters)
 # 单GPU: lr=0.0025 (线性缩放 0.01 × 3/12), 无 lr decay
 optimizer = dict(type="SGD", lr=0.0025, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(
@@ -151,7 +147,7 @@ lr_config = dict(
     warmup="linear",
     warmup_iters=500,
     warmup_ratio=0.001,
-    step=[120000, 160000],  # >> max_iters → lr 永不衰减 (同论文)
+    step=[120000, 160000],  # >> max_iters → 本次训练不衰减
 )
 runner = dict(_delete_=True, type="IterBasedRunner", max_iters=32000)
 checkpoint_config = dict(by_epoch=False, interval=4000, max_keep_ckpts=10)
@@ -165,7 +161,11 @@ fp16 = dict(loss_scale="dynamic")
 # ============================================================
 # Output
 # ============================================================
-work_dir = "work_dirs/phase3_dual_teacher/${percent}/${fold}"
+# Keep corrected-baseline runs separate from the previous consensus runs.
+work_dir = "work_dirs/phase3_dual_teacher_baseline_nms/${percent}/${fold}"
+auto_resume = False
+load_from = None
+resume_from = None
 log_config = dict(
     interval=50,
     hooks=[

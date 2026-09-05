@@ -63,6 +63,62 @@ done
 python tools/test.py <config_file_path> <model_file_path> --eval bbox --work-dir <save_dir>
 ```
 
+### Corrected SSDD baseline: initialization and NMS
+
+The corrected fresh-run path explicitly loads Phase 1 into teacher1/student1
+and Phase 2 into teacher2/student2 **after** generic model initialization and
+**before** the runner's first step / EMA hook. Every parameter and buffer is
+checked for matching keys, shapes, finite values and equality after loading.
+Missing/incompatible checkpoints stop training. A successful startup prints
+four `[DualTeacher init] ... verified ...` messages followed by:
+
+```text
+[DualTeacher init] PASS: T1=S1, T2=S2, T1!=T2; fusion=NMS, fusion_iou=0
+```
+
+Pseudo-label fusion now follows the released author code's ordinary NMS,
+including **fusion IoU=0** and empty-teacher passthrough. This is separate from
+the detector's own NMS thresholds. The previous consensus OR score boost and
+single-teacher rescaling have been removed. The learning rate, 32000 iterations,
+loss weights, data splits and EMA schedule of the single-GPU reproduction config
+are otherwise unchanged; this is not a claim of identical four-GPU optimization.
+
+On the training machine, first check the real checkpoints without a dataset,
+GPU training or optimizer (repeat for folds 6, 7 and 8):
+
+```shell
+python tools/check_dual_teacher_init.py configs/reproduce/phase3_dual_teacher_ssdd.py \
+    --cfg-options fold=6 percent=3
+```
+
+After the checks pass, launch a **new** Phase 3 run, retaining the same labeled
+images. For example (choose and record the training RNG seed deliberately;
+the fold number only selects the labeled-data split):
+
+```shell
+python -m torch.distributed.launch --nproc_per_node=1 \
+    tools/train.py configs/reproduce/phase3_dual_teacher_ssdd.py \
+    --launcher pytorch --seed 678 --cfg-options fold=6 percent=3
+```
+
+Outputs go to `work_dirs/phase3_dual_teacher_baseline_nms/3/6`, not the old
+`phase3_dual_teacher` directory; automatic resume is disabled. **Do not resume
+the old consensus/uninitialized Phase 3 checkpoints as a corrected baseline.**
+Existing Phase 1/2 checkpoints and all old logs should be kept unchanged.
+Resume a corrected run only with an explicit `--resume-from` pointing to its
+full four-branch checkpoint. Full checkpoint restore/inference does not need
+the Phase 1/2 files and will not substitute their weights.
+
+CPU regression tests use small synthetic checkpoints and real PyTorch/NMS,
+with MMDetection construction replaced by lightweight fixtures:
+
+```shell
+python -m pytest -q tests/test_dual_teacher_baseline.py
+```
+
+These tests require PyTorch, NumPy, Numba and pytest. They do not replace the
+real-checkpoint startup check above or a full CUDA training experiment.
+
 ## Cite
 ```
 @article{zheng2023dual,

@@ -1,6 +1,7 @@
 _base_ = "base.py"
 
-load_from = 'work_dirs/soft_teacher_faster_rcnn_r50_caffe_fpn_coco_180k/10/1/iter_180000.pth'
+# Fresh DualTeacher initialization uses load1_from/load2_from explicitly.
+load_from = None
 
 model = dict(
     backbone=dict(
