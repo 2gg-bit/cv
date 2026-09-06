@@ -88,7 +88,13 @@ class DualTeacher(MultiSteamDetector):
             logger,
         )
         first, second = self.teacher1.state_dict(), self.teacher2.state_dict()
-        if all(torch.equal(first[key], second[key]) for key in first):
+        # Random auxiliary heads must not hide identical Phase 1/2 detector
+        # initialization. The loader already validated this explicit whitelist.
+        roi_head = getattr(self.teacher1, "roi_head", None)
+        quality_keys = (set(roi_head.quality_initialization_keys())
+                        if hasattr(roi_head, "quality_initialization_keys") else set())
+        if all(torch.equal(first[key], second[key])
+               for key in first if key not in quality_keys):
             raise RuntimeError(
                 "Phase 1/2 initialized identical branches; check load1_from/load2_from"
             )
@@ -116,7 +122,12 @@ class DualTeacher(MultiSteamDetector):
             log_every_n(
                 {"sup1_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
             )
-            sup1_loss = self.student1.forward_train(**data_groups["sup1"])
+            sup1_inputs = dict(data_groups["sup1"])
+            if getattr(getattr(self.student1, "roi_head", None), "quality_enabled", False):
+                # Opt in only for real labeled data. Teacher pseudo-label and
+                # unsupervised RoI calls retain the original behavior.
+                sup1_inputs["quality_supervised"] = True
+            sup1_loss = self.student1.forward_train(**sup1_inputs)
             sup1_loss = {"sup1_" + k: v for k, v in sup1_loss.items()}
             loss.update(**sup1_loss)
         if "sup2" in data_groups:
@@ -124,7 +135,10 @@ class DualTeacher(MultiSteamDetector):
             log_every_n(
                 {"sup2_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
             )
-            sup2_loss = weighted_loss(self.student2.forward_train(**data_groups["sup2"]), 0.2)
+            sup2_inputs = dict(data_groups["sup2"])
+            if getattr(getattr(self.student2, "roi_head", None), "quality_enabled", False):
+                sup2_inputs["quality_supervised"] = True
+            sup2_loss = weighted_loss(self.student2.forward_train(**sup2_inputs), 0.2)
             sup2_loss = {"sup2_" + k: v for k, v in sup2_loss.items()}
             loss.update(**sup2_loss)
         if "unsup_teacher" in data_groups and "unsup_student" in data_groups:

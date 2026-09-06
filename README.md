@@ -119,6 +119,16 @@ python -m pytest -q tests/test_dual_teacher_baseline.py
 These tests require PyTorch, NumPy, Numba and pytest. They do not replace the
 real-checkpoint startup check above or a full CUDA training experiment.
 
+### M1 exploratory localization-quality branch
+
+The optional `phase3_dual_teacher_ssdd_m1.py` config adds a lightweight,
+supervised-only RoI quality head. Baseline configuration and pseudo-label
+generation remain unchanged. M1-A and M1-B evaluate the same new checkpoint
+with original classification ranking or quality-product ranking respectively.
+This is an unvalidated experiment, not a claimed accuracy improvement.
+See [the M1 protocol and training-machine acceptance commands](docs/m1_quality_experiment.md)
+before starting a new run. No training is launched by adding this code.
+
 ## Cite
 ```
 @article{zheng2023dual,
