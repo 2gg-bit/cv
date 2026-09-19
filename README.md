@@ -129,6 +129,19 @@ This is an unvalidated experiment, not a claimed accuracy improvement.
 See [the M1 protocol and training-machine acceptance commands](docs/m1_quality_experiment.md)
 before starting a new run. No training is launched by adding this code.
 
+### M3 experimental task-specific teacher routing
+
+The opt-in M3 configuration keeps M2 classification weighting and changes only
+the unsupervised **positive RoI regression targets**, after the original
+assignment and sampling. It reuses each teacher's jitter mean/uncertainty,
+chooses the lower-uncertainty valid target, and falls back to the original fused
+box. No new model parameters or inference changes are introduced.
+
+Read [M3: implementation, acceptance gates and training-machine commands](docs/m3_teacher_routing.md)
+before running anything. Existing image selections, developer split and
+Phase1/2 checkpoints must be reused. Offline feasibility and real GPU acceptance
+are required before a new training run; this is not a claimed accuracy gain.
+
 ## Cite
 ```
 @article{zheng2023dual,
