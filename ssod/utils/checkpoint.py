@@ -6,7 +6,7 @@ from collections.abc import Mapping
 import torch
 
 
-# Only this versioned, opt-in extension may be initialized from fresh weights.
+# Only these explicit, opt-in extensions may initialize fresh auxiliary weights.
 # In particular, this is not a suffix match or a blanket non-strict load.
 QUALITY_INITIALIZATION_KEYS = frozenset((
     "roi_head.quality_head.fc1.weight",
@@ -14,32 +14,48 @@ QUALITY_INITIALIZATION_KEYS = frozenset((
     "roi_head.quality_head.fc2.weight",
     "roi_head.quality_head.fc2.bias",
 ))
+FOREGROUND_INITIALIZATION_KEYS = frozenset((
+    "roi_head.foreground_head.conv.weight",
+    "roi_head.foreground_head.conv.bias",
+    "roi_head.foreground_head.out.weight",
+    "roi_head.foreground_head.out.bias",
+))
 
 
-def _quality_initialization_keys(model):
+def _declared_initialization_keys(model, method, expected_keys, label):
     roi_head = getattr(model, "roi_head", None)
-    declare_keys = getattr(roi_head, "quality_initialization_keys", None)
+    declare_keys = getattr(roi_head, method, None)
     if declare_keys is None:
         return frozenset()
     if not callable(declare_keys):
-        raise TypeError("quality_initialization_keys must be callable")
+        raise TypeError(method + " must be callable")
     keys = declare_keys()
     if not isinstance(keys, (tuple, list, set, frozenset)):
-        raise TypeError("quality_initialization_keys must return a key collection")
+        raise TypeError(method + " must return a key collection")
     if not all(isinstance(key, str) for key in keys):
-        raise TypeError("quality_initialization_keys must contain string keys")
+        raise TypeError(method + " must contain string keys")
     declared = frozenset(keys)
-    if len(declared) != len(keys) or (declared and declared != QUALITY_INITIALIZATION_KEYS):
-        raise RuntimeError("Invalid quality-head initialization whitelist")
+    if len(declared) != len(keys) or (declared and declared != expected_keys):
+        raise RuntimeError("Invalid " + label + " initialization whitelist")
     return declared
+
+
+def _quality_initialization_keys(model):
+    return _declared_initialization_keys(
+        model, "quality_initialization_keys", QUALITY_INITIALIZATION_KEYS, "quality-head")
+
+
+def _foreground_initialization_keys(model):
+    return _declared_initialization_keys(
+        model, "foreground_initialization_keys", FOREGROUND_INITIALIZATION_KEYS, "foreground-head")
 
 
 def load_branch_weights(filename, branches, logger):
     """Load one trusted, local detector checkpoint into a teacher/student pair.
 
-    Validate every destination before copying. A quality-aware detector may
-    explicitly opt in to initializing the four new quality-head tensors when
-    loading an old Phase 1/2 checkpoint. All four must be absent together; old
+    Validate every destination before copying. An auxiliary-head detector may
+    explicitly opt in to initializing its four new tensors when
+    loading an old Phase 1/2 checkpoint. Each group must be absent together; old
     detector tensors remain mandatory. The same initialized head is copied to
     both members of a pair and the merged state is loaded strictly. This helper
     is not used to restore full four-branch training/inference checkpoints.
@@ -72,16 +88,19 @@ def load_branch_weights(filename, branches, logger):
     destinations = []
     for name, model in branches:
         expected = model.state_dict()
-        allowed = _quality_initialization_keys(model)
-        if not allowed.issubset(expected):
-            raise RuntimeError("{}: declared quality-head tensors do not exist".format(name))
-        present_quality = allowed & set(state_dict)
-        if present_quality and present_quality != allowed:
-            raise RuntimeError(
-                "{} -> {}: partial quality-head checkpoint; all four new "
-                "tensors must be present or absent together".format(filename, name)
-            )
-        initialize = allowed if not present_quality else frozenset()
+        initialize = set()
+        for label, allowed in (
+                ("quality-head", _quality_initialization_keys(model)),
+                ("foreground-head", _foreground_initialization_keys(model))):
+            if not allowed.issubset(expected):
+                raise RuntimeError("{}: declared {} tensors do not exist".format(name, label))
+            present = allowed & set(state_dict)
+            if present and present != allowed:
+                raise RuntimeError(
+                    "{} -> {}: partial {} checkpoint; all four new "
+                    "tensors must be present or absent together".format(filename, name, label))
+            if not present:
+                initialize.update(allowed)
         missing = sorted(set(expected) - set(state_dict) - initialize)
         unexpected = sorted(set(state_dict) - set(expected))
         mismatched = [
@@ -102,7 +121,7 @@ def load_branch_weights(filename, branches, logger):
 
     initialize = destinations[0][3]
     if any(item[3] != initialize for item in destinations):
-        raise RuntimeError("Destination branches disagree on quality-head initialization")
+        raise RuntimeError("Destination branches disagree on auxiliary-head initialization")
     merged = OrderedDict(state_dict)
     if initialize:
         first_state = destinations[0][2]
@@ -110,12 +129,12 @@ def load_branch_weights(filename, branches, logger):
             merged[key] = first_state[key].detach().cpu().clone()
 
     # New tensors must also match every destination; e.g. teacher and student
-    # may not silently use different quality hidden dimensions. Check dtype
+    # may not silently use different auxiliary hidden dimensions. Check dtype
     # conversions before changing any branch, including FP32 -> FP16 overflow.
     for name, model, expected, _ in destinations:
         for key, value in merged.items():
             if value.shape != expected[key].shape:
-                raise RuntimeError("{}: quality-head shape_mismatch: {}".format(name, key))
+                raise RuntimeError("{}: auxiliary-head shape_mismatch: {}".format(name, key))
             if not torch.isfinite(value.to(dtype=expected[key].dtype)).all():
                 raise ValueError("{}: {} becomes NaN/Inf in destination dtype".format(name, key))
 
@@ -131,10 +150,11 @@ def load_branch_weights(filename, branches, logger):
             filename, name, len(merged),
         )
     if initialize:
+        label = "foreground-head" if initialize & FOREGROUND_INITIALIZATION_KEYS else "quality-head"
         logger.info(
-            "[DualTeacher init] initialized new quality-head tensors from %s "
+            "[DualTeacher init] initialized new %s tensors from %s "
             "and copied identically to %s: %s",
-            destinations[0][0], ", ".join(item[0] for item in destinations),
+            label, destinations[0][0], ", ".join(item[0] for item in destinations),
             ", ".join(sorted(initialize)),
         )
 

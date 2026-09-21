@@ -126,8 +126,10 @@ class DualTeacher(MultiSteamDetector):
         roi_head = getattr(self.teacher1, "roi_head", None)
         quality_keys = (set(roi_head.quality_initialization_keys())
                         if hasattr(roi_head, "quality_initialization_keys") else set())
+        foreground_keys = (set(roi_head.foreground_initialization_keys())
+                           if hasattr(roi_head, "foreground_initialization_keys") else set())
         if all(torch.equal(first[key], second[key])
-               for key in first if key not in quality_keys):
+               for key in first if key not in (quality_keys | foreground_keys)):
             raise RuntimeError(
                 "Phase 1/2 initialized identical branches; check load1_from/load2_from"
             )
@@ -158,6 +160,8 @@ class DualTeacher(MultiSteamDetector):
                 {"sup1_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
             )
             sup1_inputs = dict(data_groups["sup1"])
+            if getattr(getattr(self.student1, "roi_head", None), "foreground_enabled", False):
+                sup1_inputs["foreground_supervised"] = True
             if getattr(getattr(self.student1, "roi_head", None), "quality_enabled", False):
                 # Opt in only for real labeled data. Teacher pseudo-label and
                 # unsupervised RoI calls retain the original behavior.
@@ -171,6 +175,8 @@ class DualTeacher(MultiSteamDetector):
                 {"sup2_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
             )
             sup2_inputs = dict(data_groups["sup2"])
+            if getattr(getattr(self.student2, "roi_head", None), "foreground_enabled", False):
+                sup2_inputs["foreground_supervised"] = True
             if getattr(getattr(self.student2, "roi_head", None), "quality_enabled", False):
                 sup2_inputs["quality_supervised"] = True
             sup2_loss = weighted_loss(self.student2.forward_train(**sup2_inputs), 0.2)
