@@ -69,7 +69,7 @@ def test_warmup_boundary_and_update_use_all_candidates_once():
     assert model.value == pytest.approx(.8)
     assert model.eligible(torch.tensor([.56, .8, .81])).tolist() == [False, True, True]
     assert int(model.count) == 0 and int(model.steps) == 2
-    assert not bool(model.scores.any())
+    assert not bool(model.scores.bool().any())
 
 
 def test_empty_sparse_equal_score_windows_keep_previous_threshold():

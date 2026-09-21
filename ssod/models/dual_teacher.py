@@ -147,6 +147,7 @@ class DualTeacher(MultiSteamDetector):
 
         loss = {}
         mvdt_candidates = []
+        mvdt_threshold_used = self.mvdt.value if self.mvdt is not None else None
         #! Warnings: By splitting losses for supervised data and unsupervised data with different names,
         #! it means that at least one sample for each group should be provided on each gpu.
         #! In some situation, we can only put one image per gpu, we have to return the sum of loss
@@ -246,7 +247,15 @@ class DualTeacher(MultiSteamDetector):
                     "effective from next training forward",
                     report["step"], report["samples"], report["threshold"],
                     report["updated"])
-            log_every_n({"mvdt_cls_threshold": self.mvdt.value})
+            step = int(self.mvdt.steps.item())
+            if step == 1 or step % 50 == 0:
+                # log_every_n defaults to DEBUG and may send dicts only to
+                # wandb. Use INFO directly so the training file always records
+                # the threshold used by THIS step, even between updates.
+                get_root_logger().info(
+                    "[MVDT threshold] step=%d mvdt_cls_threshold=%.6f "
+                    "next_cls_threshold=%.6f",
+                    step, mvdt_threshold_used, self.mvdt.value)
         return loss
 
     def get_det_bboxes(self, model, img, img_metas, proposals=None, **kwargs):

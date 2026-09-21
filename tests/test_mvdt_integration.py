@@ -2,6 +2,7 @@
 
 import ast
 import copy
+import logging
 from pathlib import Path
 from types import MethodType, SimpleNamespace
 
@@ -104,6 +105,28 @@ def test_actual_forward_counts_fused_candidates_once_and_updates_after_both_stud
     assert thresholds[:4] == [.9] * 4
     assert thresholds[4:] == pytest.approx([.8, .8])
     assert int(model.mvdt.steps) == 3 and int(model.mvdt.count) == 2
+
+
+def test_threshold_is_logged_at_info_between_updates_and_labels_boundary(caplog):
+    model, ns = model_fixture()
+    model.mvdt = controller(warmup_iters=50, update_interval=50)
+    ns["MultiSteamDetector"].forward_train = lambda *args, **kwargs: None
+    ns["dict_split"] = lambda *args: {}
+    # A live wandb session can swallow the old dictionary log. The threshold
+    # line must reach the INFO logger without relying on this helper.
+    ns["log_every_n"] = lambda *args, **kwargs: None
+    with caplog.at_level(logging.INFO, logger="dual_teacher_test"):
+        model.forward_train(torch.zeros(1), [dict(tag="unused")])
+        model.mvdt.steps.fill_(49)
+        model.mvdt.count.fill_(4)
+        model.mvdt.scores[:4] = torch.tensor([.55, .56, .8, .81])
+        model.forward_train(torch.zeros(1), [dict(tag="unused")])
+    threshold_lines = [record.getMessage() for record in caplog.records
+                       if "[MVDT threshold]" in record.getMessage()]
+    assert threshold_lines == [
+        "[MVDT threshold] step=1 mvdt_cls_threshold=0.900000 next_cls_threshold=0.900000",
+        "[MVDT threshold] step=50 mvdt_cls_threshold=0.900000 next_cls_threshold=0.800000",
+    ]
 
 
 def test_both_real_classification_methods_use_dynamic_admission():

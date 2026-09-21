@@ -185,7 +185,7 @@ def install_sampling_observers(model, events):
                 if len(target_args) != 4 or len(original_targets) != 4:
                     raise AssertionError("Unexpected bbox target call signature")
                 changed = (target_args[2] != original_targets[2]).any(dim=1)
-                negatives = ~original_targets[3].any(dim=1)
+                negatives = ~original_targets[3].bool().any(dim=1)
                 event["actual_bbox_target_rows_changed"] = int(changed.sum())
                 event["labels_and_weights_unchanged"] = all(
                     torch.equal(target_args[index], original_targets[index]) for index in (0, 1, 3))

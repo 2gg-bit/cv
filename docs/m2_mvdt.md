@@ -78,7 +78,17 @@ DualTeacher 时启动器与 worker 加载不同实现的问题。
 ```
 
 若候选太少或全部同分，`updated=False` 是保留旧阈值；结合 `samples` 检查实际
-分数覆盖。日志也包含 `mvdt_cls_threshold`，M2 原有正/负 RoI 统计继续保留。
+分数覆盖。修正版在第 1 步及每 50 步直接写入 INFO 文件日志，例如：
+
+```text
+[MVDT threshold] step=1000 mvdt_cls_threshold=0.900000 next_cls_threshold=0.812345
+```
+
+`mvdt_cls_threshold` 表示这一训练步两个学生实际使用的值，`next_cls_threshold`
+表示本步结束后的值。在更新边界二者可能不同。此日志不经过 DEBUG 默认级别的
+`log_every_n`，也不会被已启用的 wandb 分流。M2 原有正/负 RoI 统计继续保留。
+初始提交 `ffa5704` 只有每次更新的 `[MVDT]` INFO 行，周期阈值字典被 DEBUG
+级别过滤；这是日志缺失，不影响当时的阈值更新或 checkpoint 状态。
 
 ## 恢复与评估
 
@@ -100,6 +110,31 @@ AP、AP75、APs、AR@100 以及入选伪框数；本改动只改变分类准入�
 召回一定同时改善。原跨种子编排器的人工放行、账本和哈希约定不由本代码更改，
 不要将新配置作为旧 run 的自动续跑项。
 
+## 与冻结跨种子队列并存
+
+若 `DualTeacher` 正在运行 `ffa5704`，本次兼容/日志修补不要求重启训练。保留
+当前运行目录和源码版本，修补可在另一个 checkout 验证，或等本轮结束后拉取。
+修改磁盘上的源码不会让已导入的 Python 函数自动升级，反而会使后续磁盘哈希与
+启动记录不一致。当前运行的每千步 `[MVDT]` INFO 更新行与 checkpoint 状态仍有效。
+
+另一个冻结目录 `DualTeacher_m3` 不应跟随此仓库更新模型源码。两目录源码已经
+不同，`cwd=DualTeacher_m3` 不能保证实际 worker 使用它：editable install 仍可能
+将 `ssod` 指向 `DualTeacher`。队列重启应使用已单独交付的 v4.1 启动/核验流程：
+
+1. 核实并停止旧的交接等待编排器，保留其输出和 run #1 产物；确认停止的不是
+   当前 M2+MVDT worker。旧 v3 尚能启动 run #2 时，不创建 `HANDOVER_RELEASED`。
+2. 在冻结目录安装 v4.1 新增的控制工具，保持模型、配置、权重不变。实际子进程
+   显式设置 `PYTHONPATH`，使用 `crossseed_train_worker_v4_1.py`。仅在核验器里
+   固定路径，或只执行启动器中的 `import ssod`，都不足以解决问题。
+3. 先运行 v4.1 的实际 launcher/worker 预检及 dry-run。worker 必须核对实际
+   导入路径、注册的 DualTeacher 类、预期源码哈希，并写绑定启动 manifest 的
+   回执。预检须标明 `training_started=false`。
+4. 用 `--handover-only` 单独处理 run #1，避免放行后自动开启后续训练。run #1
+   的历史运行时来源证据缺口仍须保留，不能用这次预检补写为旧运行的启动证据。
+   之后剩余队列必须继续使用同一套带 worker 回执的 v4.1 流程。
+
+以上是另一台训练电脑上的迁移要求；本提交没有远程部署队列，也没有创建放行文件。
+
 ## 检查范围
 
 ```bash
@@ -113,7 +148,18 @@ python -m pytest -q tests
 完整检测器构建使用小型 CPU fixtures；这些检查不替代训练机上的 CUDA 算子、
 真实数据前向和完整训练精度验证。
 
-2026-09-21 本地检查：Python 3.12 / PyTorch 2.5.1 CPU 下完整测试集通过
-259 项、85 个子测试，2 项分别因缺少 CUDA 和 MMDetection 环境跳过。双进程 Gloo 测试实际
-执行并通过。本机未完成原 PyTorch 1.7 + MMCV 1.3.9 + MMDetection 2.16 的
-真实检测器运行；训练机需要按上面的入口检查并进行实际数据运行。
+2026-09-21 初始提交的本地检查是 Python 3.12 / PyTorch 2.5.1 CPU 下
+259 通过、2 跳过，并非训练电脑的 dt 环境结果。随后训练电脑报告两个
+PyTorch 1.7 浮点 `.any()` 不兼容：新 MVDT 测试的缓存判断，以及已有 M3
+检查工具的负样本权重判断。本修补均显式转为 bool 后调用 `.any()`。
+
+修补后的本地检查：
+
+- Python 3.12 / PyTorch 2.5.1 CPU：完整测试集 260 通过、85 个子测试通过；
+  2 项分别因缺少 CUDA 和 MMDetection 环境跳过。
+- Python 3.6.4 / PyTorch 1.7.0 CPU：`test_mvdt.py`、`test_mvdt_integration.py`、
+  `test_mvdt_launcher.py`、`test_m3_roi_head.py` 共 54 项通过，覆盖两处兼容
+  修复、阈值/恢复/日志、实际分类入口及 M3 检查观察器。
+- 两个版本的上述分布式 Gloo 测试均实际执行并通过。
+
+这仍不是训练电脑原 CUDA + MMCV 1.3.9 + MMDetection 2.16 的完整检测器验证。
