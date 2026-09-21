@@ -55,6 +55,7 @@ def test_supervision_opt_in_and_existing_weights(enabled):
             return loss
 
     model = load_forward_class()()
+    model.mvdt = None  # forward-only fixture bypasses DualTeacher.__init__
     model.student1, model.student2 = Detector("s1"), Detector("s2")
     meta = [{"tag": "sup1"}, {"tag": "sup2"}]
     losses = model.forward_train([1, 2], meta, gt_bboxes=[[[0, 0, 1, 1]], [[0, 0, 2, 2]]])

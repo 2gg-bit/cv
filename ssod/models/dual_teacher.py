@@ -13,6 +13,7 @@ from .utils import Transform2D, filter_invalid
 
 from ssod.utils.ensemble_boxes import nms
 from .m3_routing import select_regression_targets
+from .mvdt import MVDTThreshold
 
 
 def fuse_teacher_proposals(proposals1, labels1, proposals2, labels2):
@@ -65,6 +66,7 @@ class DualTeacher(MultiSteamDetector):
         self.m3_enabled = False
         self.m3_target_mode = "lower_uncertainty"
         self.m3_min_anchor_iou = 0.5
+        self.mvdt = None
         if train_cfg is not None:
             self.freeze("teacher1")
             self.freeze("teacher2")
@@ -79,6 +81,13 @@ class DualTeacher(MultiSteamDetector):
             self.m3_enabled = bool(self.train_cfg.get("m3_enabled", False))
             self.m3_target_mode = self.train_cfg.get("m3_target_mode", "lower_uncertainty")
             self.m3_min_anchor_iou = float(self.train_cfg.get("m3_min_anchor_iou", 0.5))
+            if self.train_cfg.get("mvdt_enabled", False):
+                if self.student1.roi_head.bbox_head.num_classes != 1:
+                    raise ValueError("MVDT currently supports the single ship class only")
+                self.mvdt = MVDTThreshold(
+                    initial_threshold=self.train_cfg.cls_pseudo_threshold,
+                    score_floor=self.train_cfg.pseudo_label_initial_score_thr,
+                    **dict(self.train_cfg.get("mvdt", {})))
             if self.m3_enabled:
                 if self.m3_target_mode not in ("original", "teacher1", "teacher2", "lower_uncertainty"):
                     raise ValueError("Unknown M3 regression target mode")
@@ -137,6 +146,7 @@ class DualTeacher(MultiSteamDetector):
             v.pop("tag")
 
         loss = {}
+        mvdt_candidates = []
         #! Warnings: By splitting losses for supervised data and unsupervised data with different names,
         #! it means that at least one sample for each group should be provided on each gpu.
         #! In some situation, we can only put one image per gpu, we have to return the sum of loss
@@ -183,6 +193,11 @@ class DualTeacher(MultiSteamDetector):
                     else None,
                 )
 
+            if self.mvdt is not None:
+                # Both teacher_info dictionaries contain the SAME fused set.
+                # Count it once, before strong-view transforms / RoI sampling.
+                mvdt_candidates = [box[:, 4] for box in teacher1_info["det_bboxes"]]
+
             unsup1_loss = weighted_loss(
                 self.foward_unsup1_train(
                     teacher1_info, teacher2_info, data_groups["unsup_student"]
@@ -219,6 +234,19 @@ class DualTeacher(MultiSteamDetector):
             # unsup21_loss = {"unsup21_" + k: v for k, v in unsup21_loss.items()}
             # loss.update(**unsup21_loss)
 
+        if self.mvdt is not None:
+            # Every rank participates, including ranks with no unsup images.
+            # Commit the update only AFTER both students used the old threshold.
+            scores = (torch.cat(mvdt_candidates) if mvdt_candidates
+                      else self.mvdt.scores.new_empty(0))
+            report = self.mvdt.observe(scores)
+            if report is not None:
+                get_root_logger().info(
+                    "[MVDT] step=%d samples=%d threshold=%.6f updated=%s; "
+                    "effective from next training forward",
+                    report["step"], report["samples"], report["threshold"],
+                    report["updated"])
+            log_every_n({"mvdt_cls_threshold": self.mvdt.value})
         return loss
 
     def get_det_bboxes(self, model, img, img_metas, proposals=None, **kwargs):
@@ -541,6 +569,14 @@ class DualTeacher(MultiSteamDetector):
             get_root_logger().info(
                 f"[ROI-{branch}] pos={num_pos} neg={num_neg} Z0={float(Z_0):.2f}")
 
+    def _filter_cls_pseudo(self, bbox, label, score):
+        if self.mvdt is None:
+            return filter_invalid(bbox, label, score, thr=self.train_cfg.cls_pseudo_threshold)
+        valid = self.mvdt.eligible(score)
+        # Keep the original positive width/height filtering. MVDT changes only
+        # confidence admission; RPN / regression call filter_invalid directly.
+        return filter_invalid(bbox[valid], label[valid])
+
     def unsup1_rcnn_cls_loss(
         self,
         teacher0_info,
@@ -557,11 +593,10 @@ class DualTeacher(MultiSteamDetector):
         **kwargs,
     ):
         gt_bboxes, gt_labels, _ = multi_apply(
-            filter_invalid,
+            self._filter_cls_pseudo,
             [bbox[:, :4] for bbox in pseudo_bboxes],
             pseudo_labels,
             [bbox[:, 4] for bbox in pseudo_bboxes],
-            thr=self.train_cfg.cls_pseudo_threshold,
         )
         log_every_n(
             {"rcnn_cls_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
@@ -902,6 +937,14 @@ class DualTeacher(MultiSteamDetector):
                 "DualTeacher load/resume requires a full four-branch checkpoint. "
                 "For a fresh run, set load_from=None and use load1_from/load2_from."
             )
+        mvdt_keys = [key for key in state_dict if key.startswith(prefix + "mvdt.")]
+        if self.mvdt is None and mvdt_keys:
+            if self.train_cfg is not None:
+                raise RuntimeError("An MVDT training checkpoint requires mvdt_enabled=True")
+            # Inference selects an existing detector branch. Training-only
+            # threshold history is not needed and must not require a train_cfg.
+            for key in mvdt_keys:
+                state_dict.pop(key)
         return super()._load_from_state_dict(
             state_dict,
             prefix,
@@ -1054,11 +1097,10 @@ class DualTeacher(MultiSteamDetector):
         **kwargs,
     ):
         gt_bboxes, gt_labels, _ = multi_apply(
-            filter_invalid,
+            self._filter_cls_pseudo,
             [bbox[:, :4] for bbox in pseudo_bboxes],
             pseudo_labels,
             [bbox[:, 4] for bbox in pseudo_bboxes],
-            thr=self.train_cfg.cls_pseudo_threshold,
         )
         log_every_n(
             {"rcnn_cls_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}

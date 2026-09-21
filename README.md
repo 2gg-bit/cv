@@ -142,6 +142,18 @@ before running anything. Existing image selections, developer split and
 Phase1/2 checkpoints must be reused. Offline feasibility and real GPU acceptance
 are required before a new training run; this is not a claimed accuracy gain.
 
+### M2 + MVDT dynamic pseudo-label admission
+
+The opt-in `phase3_dual_teacher_ssdd_dev_m2_mvdt.py` config replaces the fixed
+unsupervised RoI classification cutoff with an exact minimum-variance split
+of fused teacher scores. Both students share the threshold; existing M2
+weighting, RPN/regression settings and inference remain in place. Thresholds
+and partial score windows are checkpointed, including multi-rank candidates.
+
+See [the M2 + MVDT implementation and training commands](docs/m2_mvdt.md).
+The dedicated training entry point pins each worker to this checkout and logs
+the actual source paths/hashes. This is an experiment, not a measured AP gain.
+
 ## Cite
 ```
 @article{zheng2023dual,
