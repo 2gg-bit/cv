@@ -35,7 +35,7 @@ PG 由 runner.iter 驱动，额外 forward 不推进进度；checkpoint 保存�
 ```bash
 # 在解压后的离线包目录执行；无需联网
 sha256sum -c SHA256SUMS.txt
-git clone repository.bundle /你的路径/DualTeacher_ablation
+git clone --branch main repository.bundle /你的路径/DualTeacher_ablation
 cd /你的路径/DualTeacher_ablation
 git rev-parse HEAD
 conda activate dt
