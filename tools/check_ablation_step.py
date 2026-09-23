@@ -101,6 +101,8 @@ def run(args, output, report):
                   initialization={str(Path(p).resolve()): file_hash(p)
                                   for p in (model.load1_from, model.load2_from)})
     dataset = build_dataset(cfg.data.train)
+    # Match tools/train.py: positive pseudo-label visualization reads CLASSES.
+    model.CLASSES = dataset.CLASSES
     loader = build_dataloader(dataset, cfg.data.samples_per_gpu, 0, num_gpus=1,
                              dist=True, seed=args.seed,
                              sampler_cfg=copy.deepcopy(cfg.data.get("sampler", {}).get("train", {})))

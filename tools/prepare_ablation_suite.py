@@ -19,6 +19,15 @@ def file_hash(path):
     return digest.hexdigest()
 
 
+def dump_config(values, path):
+    from mmcv import Config
+    # MMCV 1.3.9 Config.dump dereferences self.filename, which is None for
+    # these generated configs. Keep its Python formatter, without that branch.
+    text = Config(values).pretty_text
+    with open(str(path), "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+
+
 def annotation_paths(data):
     if isinstance(data, dict):
         for key, value in data.items():
@@ -64,7 +73,7 @@ def main():
         weights[key] = dict(path=str(path), sha256=file_hash(path))
     annotations = {str(p): file_hash(p) for p in annotation_paths(baseline["data"])}
     output.mkdir(parents=True)
-    Config(baseline).dump(str(output / "baseline_resolved.py"))
+    dump_config(baseline, output / "baseline_resolved.py")
     manifest = dict(baseline=str(Path(args.baseline).resolve()),
                     baseline_sha256=file_hash(args.baseline), seed=args.seed,
                     cfg_options=args.cfg_options, initialization=weights, annotations=annotations,
@@ -72,7 +81,7 @@ def main():
                     experiments={})
     for name, item in suite.items():
         target = output / (name + ".py")
-        Config(item).dump(str(target))
+        dump_config(item, target)
         manifest["experiments"][name] = dict(
             config=str(target), sha256=file_hash(target),
             changes_vs_b0=differences(baseline, item))

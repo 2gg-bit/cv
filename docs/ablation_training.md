@@ -102,11 +102,15 @@ CPU 初始化必须出现 T1=S1、T2=S2、T1!=T2；CUDA 验收 result.json 必�
 - FG：原检测损失不变，只新增 sup1/sup2 前景损失；关闭时辅助头无梯度，开启时梯度非零且有限。
 - PG：起点只按计划缩放目标分支，终点还原 B0；teacher 不求梯度。
 - 如果 M2 首批没有覆盖正例，结果为 incomplete、退出码 2；使用新的 out-dir 和 --batch-index 1、2…重试。不能将“未覆盖”记成通过。
+- failed / 退出码 1 必须停止批次重试，先查清并修复原因，再用新目录重新验收；旧失败记录保留。不能让循环跳过异常去寻找 PASS。
+- 损失回放使用 torch.allclose（atol=1e-6，rtol=1e-5）；通过表示容差内一致。只有另做精确比较并保存证据，才能称为逐字节或逐位相同。
 - 出现非有限值或不符合损失路由就停止，先定位代码/环境问题，不以改阈值来绕过验收。
 
 ## 4. 完整训练
 
 每组从同一正确 Phase1/Phase2 新建 Phase3，不能接 B0、M2 或 FG 的 Phase3 checkpoint 继续训练。固定 seed、fold、T 和 GPU 数量；本示例为单卡，需与正确 B0 一致。若正确 B0 使用 --deterministic 或 --no-validate，训练命令也保持一致。
+
+注意：tools/train.py 默认 validate=True；传入 --no-validate 才关闭训练中验证。B0 日志片段没有 EvalHook，不能作为省略该参数的依据；应对照 B0 启动命令及完整 hook 清单（包括 SubModulesDistEvalHook）、评估日志，与新运行核对。deterministic=False 只确定随机性选项，不确定验证开关。
 
 ```bash
 set +e
