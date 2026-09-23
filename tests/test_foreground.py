@@ -1,7 +1,7 @@
 """CPU math, routing, initialization and restore checks for foreground loss.
 
 Framework fixtures execute the real class/method AST, not CUDA RoI operators.
-Use train_m2_fg.py --check-step for the real MMDetection training stack.
+Use train_ablation.py --check-step for the real MMDetection training stack.
 """
 
 import ast
@@ -16,7 +16,7 @@ import torch
 from torch import nn
 
 from test_dual_teacher_baseline import actual_model_namespace, TrainConfig
-from test_m1_config_and_routing import load_forward_class
+from routing_fixture import load_forward_class
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -187,7 +187,6 @@ def test_dual_teacher_routes_real_supervision_and_preserves_point_two_weight(ena
             return dict(loss_cls=2., **({"loss_foreground": 3.} if inputs.get("foreground_supervised") else {}))
 
     model = load_forward_class()()
-    model.mvdt = None
     model.student1, model.student2 = Detector(), Detector()
     losses = model.forward_train([1, 2], [{"tag": "sup1"}, {"tag": "sup2"}],
                                  gt_bboxes=[[], []])
@@ -288,7 +287,7 @@ def test_actual_ema_includes_foreground_head():
 
 
 def test_launcher_checks_actual_paths_and_pins_child_imports(monkeypatch, tmp_path):
-    launch = load("fg_launch_test", "tools/train_m2_fg.py")
+    launch = load("fg_launch_test", "tools/train_ablation.py")
     monkeypatch.setattr(launch.sys, "path", [str(tmp_path)])
     monkeypatch.setenv("PYTHONPATH", str(tmp_path))
     launch.pin_repository()
@@ -296,7 +295,7 @@ def test_launcher_checks_actual_paths_and_pins_child_imports(monkeypatch, tmp_pa
     assert Path(launch.os.environ["PYTHONPATH"].split(launch.os.pathsep)[0]) == ROOT
     paths = {name: ROOT / relative for name, relative in launch.SOURCE_MODULES.items()}
     monkeypatch.setattr(launch.importlib, "import_module", lambda name: SimpleNamespace(__file__=paths[name]))
-    assert len(launch.source_manifest()["sources"]) == 6
+    assert len(launch.source_manifest()["sources"]) == len(launch.SOURCE_MODULES)
     paths["ssod.models.dual_teacher"] = tmp_path / "wrong.py"
     with pytest.raises(RuntimeError, match="expected"):
         launch.source_manifest()

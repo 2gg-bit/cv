@@ -20,7 +20,7 @@ from mmdet.datasets import build_dataset, replace_ImageToTensor
 
 from ssod.datasets import build_dataloader
 from ssod.utils import find_latest_checkpoint, get_root_logger, patch_runner
-from ssod.utils.hooks import DistEvalHook
+from ssod.utils.hooks import DistEvalHook, ProgressiveGammaHook
 from ssod.utils.checkpoint import load_or_initialize_model
 
 
@@ -192,6 +192,13 @@ def train_detector(
             priority = hook_cfg.pop("priority", "NORMAL")
             hook = build_from_cfg(hook_cfg, HOOKS)
             runner.register_hook(hook, priority=priority)
+
+    # PG is optional and registered here once, without replacing B0's hooks.
+    unwrapped = getattr(model, "module", model)
+    if getattr(unwrapped, "pg", None) is not None:
+        if any(isinstance(hook, ProgressiveGammaHook) for hook in runner.hooks):
+            raise ValueError("PG hook is automatic; remove the duplicate custom hook")
+        runner.register_hook(ProgressiveGammaHook(), priority="HIGH")
 
     runner = patch_runner(runner)
     resume_from = None

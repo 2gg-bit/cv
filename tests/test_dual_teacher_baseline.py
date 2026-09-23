@@ -11,6 +11,7 @@ the full MMDetection model and real Phase 1/2 files.
 import ast
 import importlib.util
 import logging
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -28,6 +29,7 @@ LOGGER = logging.getLogger("dual_teacher_test")
 def load_file(name, relative_path):
     spec = importlib.util.spec_from_file_location(name, str(ROOT / relative_path))
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module  # legacy Numba resolves globals through sys.modules
     spec.loader.exec_module(module)
     return module
 
@@ -297,7 +299,7 @@ def test_nms_rejects_different_batch_sizes():
 
 def test_reproduce_config_cannot_auto_resume_old_run():
     namespace = {}
-    exec(compile((ROOT / "configs/reproduce/phase3_dual_teacher_ssdd.py").read_text(), "config", "exec"), namespace)
+    exec(compile((ROOT / "configs/reproduce/phase3_dual_teacher_ssdd.py").read_text(encoding="utf-8"), "config", "exec"), namespace)
     assert namespace["auto_resume"] is False
     assert namespace["load_from"] is None
     assert namespace["resume_from"] is None

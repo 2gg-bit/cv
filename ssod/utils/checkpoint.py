@@ -8,12 +8,6 @@ import torch
 
 # Only these explicit, opt-in extensions may initialize fresh auxiliary weights.
 # In particular, this is not a suffix match or a blanket non-strict load.
-QUALITY_INITIALIZATION_KEYS = frozenset((
-    "roi_head.quality_head.fc1.weight",
-    "roi_head.quality_head.fc1.bias",
-    "roi_head.quality_head.fc2.weight",
-    "roi_head.quality_head.fc2.bias",
-))
 FOREGROUND_INITIALIZATION_KEYS = frozenset((
     "roi_head.foreground_head.conv.weight",
     "roi_head.foreground_head.conv.bias",
@@ -38,11 +32,6 @@ def _declared_initialization_keys(model, method, expected_keys, label):
     if len(declared) != len(keys) or (declared and declared != expected_keys):
         raise RuntimeError("Invalid " + label + " initialization whitelist")
     return declared
-
-
-def _quality_initialization_keys(model):
-    return _declared_initialization_keys(
-        model, "quality_initialization_keys", QUALITY_INITIALIZATION_KEYS, "quality-head")
 
 
 def _foreground_initialization_keys(model):
@@ -90,8 +79,7 @@ def load_branch_weights(filename, branches, logger):
         expected = model.state_dict()
         initialize = set()
         for label, allowed in (
-                ("quality-head", _quality_initialization_keys(model)),
-                ("foreground-head", _foreground_initialization_keys(model))):
+                ("foreground-head", _foreground_initialization_keys(model)),):
             if not allowed.issubset(expected):
                 raise RuntimeError("{}: declared {} tensors do not exist".format(name, label))
             present = allowed & set(state_dict)
@@ -150,7 +138,7 @@ def load_branch_weights(filename, branches, logger):
             filename, name, len(merged),
         )
     if initialize:
-        label = "foreground-head" if initialize & FOREGROUND_INITIALIZATION_KEYS else "quality-head"
+        label = "foreground-head"
         logger.info(
             "[DualTeacher init] initialized new %s tensors from %s "
             "and copied identically to %s: %s",

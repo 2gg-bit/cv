@@ -91,8 +91,6 @@ def build_metadata(cfg, checkpoint_path, fold, img_ids, version=None,
     rcnn = test_cfg.get("rcnn", {})
     rpn = test_cfg.get("rpn", {})
     roi_head = inner.get("roi_head", {}) if inner is not None else {}
-    quality_enabled = bool(roi_head.get("quality_enabled", False))
-    quality_ranking = quality_enabled and bool(roi_head.get("quality_inference", False))
     revision, dirty = git_revision()
     return {
         "version": revision,
@@ -105,7 +103,7 @@ def build_metadata(cfg, checkpoint_path, fold, img_ids, version=None,
         "checkpoint": osp.abspath(checkpoint_path),
         "checkpoint_sha256": sha256_file(checkpoint_path),
         "fold": fold,
-        "percent": 3,
+        "percent": cfg.get("percent"),
         "test_ann_file": cfg.data.test.ann_file,
         "test_ann_snapshot": "test.json",
         "test_ann_sha256": sha256_file(cfg.data.test.ann_file),
@@ -121,12 +119,9 @@ def build_metadata(cfg, checkpoint_path, fold, img_ids, version=None,
             "rpn_max_per_img": rpn.get("max_per_img", None),
             "fp16": cfg.get("fp16", None),
             "metric": "bbox",
-            "quality_enabled": quality_enabled,
-            "quality_inference": quality_ranking,
+            "foreground_enabled": bool(roi_head.get("foreground_enabled", False)),
             "candidate_rule": "p_ship > score_thr",
-            "ranking_and_export_score": (
-                "p_ship * sigmoid(quality_logit)" if quality_ranking else "p_ship"),
-            "second_joint_score_threshold": False,
+            "ranking_and_export_score": "p_ship",
         },
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
     }
@@ -159,7 +154,7 @@ def main():
     parser.add_argument("--version", type=str, default=None,
                         help="optional user label; actual git revision is always recorded")
     parser.add_argument("--cfg-options", nargs="+", action=DictAction,
-                        help="config overrides before patch_config; fold/percent remain fixed")
+                        help="config overrides before patch_config; do not change the frozen split")
     args = parser.parse_args()
     prepare_output_dir(args.out_dir)
 
@@ -167,9 +162,11 @@ def main():
     cfg = Config.fromfile(args.config)
     if args.cfg_options:
         if "fold" in args.cfg_options or "percent" in args.cfg_options:
-            parser.error("use --fold for the fold; this exporter fixes percent=3")
+            parser.error("use the frozen config's fold/percent; --fold must agree with it")
         cfg.merge_from_dict(args.cfg_options)
-    cfg.merge_from_dict(dict(fold=args.fold, percent=3))
+    if cfg.get("ablation_experiment") and cfg.get("fold") != args.fold:
+        parser.error("--fold differs from the frozen experiment config")
+    cfg.merge_from_dict(dict(fold=args.fold))
     cfg = patch_config(cfg)
 
     # ---- 2. test dataset (fixed test.json) ----

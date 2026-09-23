@@ -3,6 +3,7 @@ from .mean_teacher import MeanTeacher
 from .weights_summary import WeightSummary
 from .evaluation import DistEvalHook
 from .submodules_evaluation import SubModulesDistEvalHook
+from .progressive_gamma import ProgressiveGammaHook
 
 
 __all__ = [
@@ -11,4 +12,5 @@ __all__ = [
     "DistEvalHook",
     "SubModulesDistEvalHook",
     "WeightSummary",
+    "ProgressiveGammaHook",
 ]

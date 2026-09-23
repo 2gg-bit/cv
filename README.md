@@ -97,7 +97,7 @@ the fold number only selects the labeled-data split):
 
 ```shell
 python -m torch.distributed.launch --nproc_per_node=1 \
-    tools/train.py configs/reproduce/phase3_dual_teacher_ssdd.py \
+    tools/train_ablation.py configs/reproduce/phase3_dual_teacher_ssdd.py \
     --launcher pytorch --seed 678 --cfg-options fold=6 percent=3
 ```
 
@@ -119,40 +119,31 @@ python -m pytest -q tests/test_dual_teacher_baseline.py
 These tests require PyTorch, NumPy, Numba and pytest. They do not replace the
 real-checkpoint startup check above or a full CUDA training experiment.
 
-### M1 exploratory localization-quality branch
+### Fresh isolated ablations after the corrected reproduction
 
-The optional `phase3_dual_teacher_ssdd_m1.py` config adds a lightweight,
-supervised-only RoI quality head. Baseline configuration and pseudo-label
-generation remain unchanged. M1-A and M1-B evaluate the same new checkpoint
-with original classification ranking or quality-product ranking respectively.
-This is an unvalidated experiment, not a claimed accuracy improvement.
-See [the M1 protocol and training-machine acceptance commands](docs/m1_quality_experiment.md)
-before starting a new run. No training is launched by adding this code.
+All earlier experimental results are invalid and must not be used as evidence.
+The current workflow freezes a user-selected correct B0 and generates **M2 only,
+FG only, PG on labeled SAR only, and PG on both SAR branches**. Every group
+inherits B0's dataset, initialization, optimizer and evaluation settings.
 
-### M3 experimental task-specific teacher routing
+The old M1 quality head, M3 routing and MVDT modules and combined dev experiment
+entry points have been removed; prior versions remain in Git history. Strict
+Phase1/2 initialization, author-code NMS fusion and the default baseline path
+remain available. PG is a new unvalidated ablation, not a complete D3T reproduction.
 
-The opt-in M3 configuration keeps M2 classification weighting and changes only
-the unsupervised **positive RoI regression targets**, after the original
-assignment and sampling. It reuses each teacher's jitter mean/uncertainty,
-chooses the lower-uncertainty valid target, and falls back to the original fused
-box. No new model parameters or inference changes are introduced.
+Use [the Chinese offline installation and training plan](docs/ablation_training.md).
+`tools/prepare_ablation_suite.py` records configuration differences and input
+hashes. `tools/train_ablation.py` pins the actual worker imports, dispatches CPU
+initialization / real CUDA batch checks, and launches training or evaluation.
+No training is started by installing this update.
 
-Read [M3: implementation, acceptance gates and training-machine commands](docs/m3_teacher_routing.md)
-before running anything. Existing image selections, developer split and
-Phase1/2 checkpoints must be reused. Offline feasibility and real GPU acceptance
-are required before a new training run; this is not a claimed accuracy gain.
+```shell
+python -m pytest -q tests
+```
 
-### M2 + MVDT dynamic pseudo-label admission
-
-The opt-in `phase3_dual_teacher_ssdd_dev_m2_mvdt.py` config replaces the fixed
-unsupervised RoI classification cutoff with an exact minimum-variance split
-of fused teacher scores. Both students share the threshold; existing M2
-weighting, RPN/regression settings and inference remain in place. Thresholds
-and partial score windows are checkpointed, including multi-rank candidates.
-
-See [the M2 + MVDT implementation and training commands](docs/m2_mvdt.md).
-The dedicated training entry point pins each worker to this checkout and logs
-the actual source paths/hashes. This is an experiment, not a measured AP gain.
+CPU tests cover strict initialization, original NMS, M2 weights/normalization,
+foreground loss/gradients, PG scheduling/resume and configuration isolation.
+Real MMDetection/CUDA checks must still run on the training machine.
 
 ## Cite
 ```

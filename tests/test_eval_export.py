@@ -76,10 +76,10 @@ class ExportIntegrityTests(unittest.TestCase):
             checkpoint.write_bytes(b"fixture checkpoint")
             ann_file = temporary / "test.json"
             ann_file.write_text(json.dumps(annotation()))
-            roi = AttrDict(quality_enabled=True, quality_inference=True)
+            roi = AttrDict(foreground_enabled=True)
             inner = AttrDict(roi_head=roi, test_cfg=AttrDict(rcnn=AttrDict(
                 score_thr=0.05, nms=dict(iou_threshold=0.5), max_per_img=100)))
-            cfg = AttrDict(filename="m1.py", model=AttrDict(model=inner),
+            cfg = AttrDict(filename="fg.py", percent=3, model=AttrDict(model=inner),
                            data=AttrDict(test=AttrDict(ann_file=str(ann_file))), fp16=dict(loss_scale="dynamic"))
             with mock.patch.object(exporter, "git_revision", return_value=("abc123", False)):
                 result = exporter.build_metadata(cfg, str(checkpoint), 6, list(range(232)), "manual-label")
@@ -88,15 +88,15 @@ class ExportIntegrityTests(unittest.TestCase):
                 self.assertEqual(result["version_label"], "manual-label")
                 self.assertEqual(result["checkpoint_sha256"], comparator.file_hash(checkpoint))
                 self.assertEqual(result["eval_params"]["candidate_rule"], "p_ship > score_thr")
-                self.assertEqual(result["eval_params"]["ranking_and_export_score"], "p_ship * sigmoid(quality_logit)")
-                self.assertFalse(result["eval_params"]["second_joint_score_threshold"])
-                roi["quality_enabled"] = False
+                self.assertEqual(result["eval_params"]["ranking_and_export_score"], "p_ship")
+                self.assertTrue(result["eval_params"]["foreground_enabled"])
+                roi["foreground_enabled"] = False
                 disabled = exporter.build_metadata(cfg, str(checkpoint), 6, list(range(232)))
-                self.assertFalse(disabled["eval_params"]["quality_inference"])
+                self.assertFalse(disabled["eval_params"]["foreground_enabled"])
                 self.assertEqual(disabled["eval_params"]["ranking_and_export_score"], "p_ship")
 
     def test_export_routing_and_strict_loading_are_preserved(self):
-        source = (ROOT / "tools/eval_teacher2_export.py").read_text()
+        source = (ROOT / "tools/eval_teacher2_export.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
         main = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "main")
         calls = [node for node in ast.walk(main) if isinstance(node, ast.Call)]

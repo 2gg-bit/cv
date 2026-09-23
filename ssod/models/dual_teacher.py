@@ -10,10 +10,9 @@ from ssod.utils.checkpoint import load_branch_weights
 
 from .multi_stream_detector import MultiSteamDetector
 from .utils import Transform2D, filter_invalid
+from .progressive_gamma import ProgressiveGamma
 
 from ssod.utils.ensemble_boxes import nms
-from .m3_routing import select_regression_targets
-from .mvdt import MVDTThreshold
 
 
 def fuse_teacher_proposals(proposals1, labels1, proposals2, labels2):
@@ -63,41 +62,27 @@ class DualTeacher(MultiSteamDetector):
         self._pretrained_initialized = False
         self.m2_enabled = False
         self.m2_force_weight_one = False
-        self.m3_enabled = False
-        self.m3_target_mode = "lower_uncertainty"
-        self.m3_min_anchor_iou = 0.5
-        self.mvdt = None
+        self.pg = None
+        self.sup2_weight = 0.2
         if train_cfg is not None:
             self.freeze("teacher1")
             self.freeze("teacher2")
             self.unsup_weight = self.train_cfg.unsup_weight
             self.load1_from = self.train_cfg.get("load1_from")
             self.load2_from = self.train_cfg.get("load2_from")
-            # M2: optional positive pseudo-label reliability weight
-            # a_i^M2 = a_i * stopgrad(min(p_T1, p_T2)), applied ONLY to positive ROIs.
+            for retired in ("m3_enabled", "mvdt_enabled"):
+                if self.train_cfg.get(retired, False):
+                    raise ValueError("Retired experiment flag: " + retired)
             self.m2_enabled = bool(self.train_cfg.get("m2_enabled", False))
-            # test-only: force w == 1 to verify the M2-on path degenerates to M0.
             self.m2_force_weight_one = bool(self.train_cfg.get("m2_force_weight_one", False))
-            self.m3_enabled = bool(self.train_cfg.get("m3_enabled", False))
-            self.m3_target_mode = self.train_cfg.get("m3_target_mode", "lower_uncertainty")
-            self.m3_min_anchor_iou = float(self.train_cfg.get("m3_min_anchor_iou", 0.5))
-            if self.train_cfg.get("mvdt_enabled", False):
-                if self.student1.roi_head.bbox_head.num_classes != 1:
-                    raise ValueError("MVDT currently supports the single ship class only")
-                self.mvdt = MVDTThreshold(
-                    initial_threshold=self.train_cfg.cls_pseudo_threshold,
-                    score_floor=self.train_cfg.pseudo_label_initial_score_thr,
-                    **dict(self.train_cfg.get("mvdt", {})))
-            if self.m3_enabled:
-                if self.m3_target_mode not in ("original", "teacher1", "teacher2", "lower_uncertainty"):
-                    raise ValueError("Unknown M3 regression target mode")
-                if not 0 <= self.m3_min_anchor_iou <= 1:
-                    raise ValueError("M3 anchor IoU guard must be in [0, 1]")
-                if self.train_cfg.jitter_times < 2:
-                    raise ValueError("M3 requires at least two jitter samples")
-                for name in self.submodules:
-                    if not getattr(getattr(self, name).roi_head, "supports_m3_targets", False):
-                        raise ValueError("M3 requires M3RoIHead (no new parameters)")
+            self.sup2_weight = float(self.train_cfg.get("sup2_weight", 0.2))
+            if not np.isfinite(self.sup2_weight) or self.sup2_weight <= 0:
+                raise ValueError("sup2_weight must be finite and positive")
+            if self.train_cfg.get("pg"):
+                self.pg = ProgressiveGamma(
+                    base_gamma=self.sup2_weight, unsup_weight=self.unsup_weight,
+                    **dict(self.train_cfg.pg))
+
 
     def init_from_pretrained(self):
         """Explicitly initialize a fresh run, after generic init_weights.
@@ -124,12 +109,10 @@ class DualTeacher(MultiSteamDetector):
         # Random auxiliary heads must not hide identical Phase 1/2 detector
         # initialization. The loader already validated this explicit whitelist.
         roi_head = getattr(self.teacher1, "roi_head", None)
-        quality_keys = (set(roi_head.quality_initialization_keys())
-                        if hasattr(roi_head, "quality_initialization_keys") else set())
         foreground_keys = (set(roi_head.foreground_initialization_keys())
                            if hasattr(roi_head, "foreground_initialization_keys") else set())
         if all(torch.equal(first[key], second[key])
-               for key in first if key not in (quality_keys | foreground_keys)):
+               for key in first if key not in foreground_keys):
             raise RuntimeError(
                 "Phase 1/2 initialized identical branches; check load1_from/load2_from"
             )
@@ -148,8 +131,11 @@ class DualTeacher(MultiSteamDetector):
             v.pop("tag")
 
         loss = {}
-        mvdt_candidates = []
-        mvdt_threshold_used = self.mvdt.value if self.mvdt is not None else None
+        sup2_weight = getattr(self, "sup2_weight", 0.2)
+        unsup2_multiplier = sup2_weight
+        pg = getattr(self, "pg", None)
+        if pg is not None:
+            sup2_weight, unsup2_multiplier = pg.weights()
         #! Warnings: By splitting losses for supervised data and unsupervised data with different names,
         #! it means that at least one sample for each group should be provided on each gpu.
         #! In some situation, we can only put one image per gpu, we have to return the sum of loss
@@ -162,10 +148,6 @@ class DualTeacher(MultiSteamDetector):
             sup1_inputs = dict(data_groups["sup1"])
             if getattr(getattr(self.student1, "roi_head", None), "foreground_enabled", False):
                 sup1_inputs["foreground_supervised"] = True
-            if getattr(getattr(self.student1, "roi_head", None), "quality_enabled", False):
-                # Opt in only for real labeled data. Teacher pseudo-label and
-                # unsupervised RoI calls retain the original behavior.
-                sup1_inputs["quality_supervised"] = True
             sup1_loss = self.student1.forward_train(**sup1_inputs)
             sup1_loss = {"sup1_" + k: v for k, v in sup1_loss.items()}
             loss.update(**sup1_loss)
@@ -177,9 +159,7 @@ class DualTeacher(MultiSteamDetector):
             sup2_inputs = dict(data_groups["sup2"])
             if getattr(getattr(self.student2, "roi_head", None), "foreground_enabled", False):
                 sup2_inputs["foreground_supervised"] = True
-            if getattr(getattr(self.student2, "roi_head", None), "quality_enabled", False):
-                sup2_inputs["quality_supervised"] = True
-            sup2_loss = weighted_loss(self.student2.forward_train(**sup2_inputs), 0.2)
+            sup2_loss = weighted_loss(self.student2.forward_train(**sup2_inputs), sup2_weight)
             sup2_loss = {"sup2_" + k: v for k, v in sup2_loss.items()}
             loss.update(**sup2_loss)
         if "unsup_teacher" in data_groups and "unsup_student" in data_groups:
@@ -200,11 +180,6 @@ class DualTeacher(MultiSteamDetector):
                     else None,
                 )
 
-            if self.mvdt is not None:
-                # Both teacher_info dictionaries contain the SAME fused set.
-                # Count it once, before strong-view transforms / RoI sampling.
-                mvdt_candidates = [box[:, 4] for box in teacher1_info["det_bboxes"]]
-
             unsup1_loss = weighted_loss(
                 self.foward_unsup1_train(
                     teacher1_info, teacher2_info, data_groups["unsup_student"]
@@ -218,7 +193,7 @@ class DualTeacher(MultiSteamDetector):
                 self.foward_unsup2_train(
                     teacher2_info, teacher1_info, data_groups["unsup_student"]
                 ),
-                weight=self.unsup_weight * 0.2,
+                weight=self.unsup_weight * unsup2_multiplier,
             )
             unsup2_loss = {"unsup2_" + k: v for k, v in unsup2_loss.items()}
             loss.update(**unsup2_loss)
@@ -241,27 +216,6 @@ class DualTeacher(MultiSteamDetector):
             # unsup21_loss = {"unsup21_" + k: v for k, v in unsup21_loss.items()}
             # loss.update(**unsup21_loss)
 
-        if self.mvdt is not None:
-            # Every rank participates, including ranks with no unsup images.
-            # Commit the update only AFTER both students used the old threshold.
-            scores = (torch.cat(mvdt_candidates) if mvdt_candidates
-                      else self.mvdt.scores.new_empty(0))
-            report = self.mvdt.observe(scores)
-            if report is not None:
-                get_root_logger().info(
-                    "[MVDT] step=%d samples=%d threshold=%.6f updated=%s; "
-                    "effective from next training forward",
-                    report["step"], report["samples"], report["threshold"],
-                    report["updated"])
-            step = int(self.mvdt.steps.item())
-            if step == 1 or step % 50 == 0:
-                # log_every_n defaults to DEBUG and may send dicts only to
-                # wandb. Use INFO directly so the training file always records
-                # the threshold used by THIS step, even between updates.
-                get_root_logger().info(
-                    "[MVDT threshold] step=%d mvdt_cls_threshold=%.6f "
-                    "next_cls_threshold=%.6f",
-                    step, mvdt_threshold_used, self.mvdt.value)
         return loss
 
     def get_det_bboxes(self, model, img, img_metas, proposals=None, **kwargs):
@@ -340,12 +294,9 @@ class DualTeacher(MultiSteamDetector):
             proposal1_list, proposal1_label_list, proposal2_list, proposal2_label_list
         )
 
-        if self.m3_enabled:
-            reg1_unc, reg1_boxes = self.compute_uncertainty_with_aug_1(
-                feat1, img_metas, proposal_list, proposal_label_list, return_boxes=True)
-        else:
-            reg1_unc = self.compute_uncertainty_with_aug_1(
-                feat1, img_metas, proposal_list, proposal_label_list)
+        reg1_unc = self.compute_uncertainty_with_aug_1(
+            feat1, img_metas, proposal_list, proposal_label_list
+        )
         det1_bboxes = [
             torch.cat([bbox, unc], dim=-1) for bbox, unc in zip(proposal_list, reg1_unc)
         ]
@@ -358,12 +309,9 @@ class DualTeacher(MultiSteamDetector):
         ]
         teacher1_info["img_metas"] = img_metas
 
-        if self.m3_enabled:
-            reg2_unc, reg2_boxes = self.compute_uncertainty_with_aug_2(
-                feat2, img_metas, proposal_list, proposal_label_list, return_boxes=True)
-        else:
-            reg2_unc = self.compute_uncertainty_with_aug_2(
-                feat2, img_metas, proposal_list, proposal_label_list)
+        reg2_unc = self.compute_uncertainty_with_aug_2(
+            feat2, img_metas, proposal_list, proposal_label_list
+        )
         det2_bboxes = [
             torch.cat([bbox, unc], dim=-1) for bbox, unc in zip(proposal_list, reg2_unc)
         ]
@@ -383,29 +331,6 @@ class DualTeacher(MultiSteamDetector):
         teacher1_info["det_bboxes"] = det_bboxes
         teacher2_info["det_bboxes"] = det_bboxes
 
-        if self.m3_enabled:
-            targets, sources = [], []
-            for anchor, box1, box2, unc1, unc2 in zip(
-                    proposal_list, reg1_boxes, reg2_boxes, reg1_unc, reg2_unc):
-                chosen, source = select_regression_targets(
-                    anchor[:, :4], box1, box2, unc1, unc2,
-                    min_anchor_iou=self.m3_min_anchor_iou, mode=self.m3_target_mode)
-                targets.append(chosen)
-                sources.append(source)
-            # Parallel arrays share fused anchor IDs. No GT participates.
-            # det_bboxes stay unchanged: RPN/CLS, regression eligibility and
-            # assignment continue using the original fused boxes/uncertainty.
-            for info in (teacher1_info, teacher2_info):
-                info["reg_target_bboxes"] = targets
-                info["m3_source"] = sources
-                info["teacher1_reg_boxes"] = [x.detach() for x in reg1_boxes]
-                info["teacher2_reg_boxes"] = [x.detach() for x in reg2_boxes]
-                info["teacher1_reg_unc"] = reg1_unc
-                info["teacher2_reg_unc"] = reg2_unc
-            teacher1_info["raw_det_bboxes"] = proposal1_list
-            teacher1_info["raw_det_labels"] = proposal1_label_list
-            teacher2_info["raw_det_bboxes"] = proposal2_list
-            teacher2_info["raw_det_labels"] = proposal2_label_list
         return teacher1_info, teacher2_info
 
     def foward_unsup1_train(self, teacher_info, teacher0_info, student_data):
@@ -439,7 +364,6 @@ class DualTeacher(MultiSteamDetector):
             [meta["img_shape"] for meta in student_info["img_metas"]],
         )
         pseudo_labels = teacher_info["det_labels"]
-        reg_targets = self._m3_student_targets(teacher_info, M, student_info, pseudo_bboxes)
         loss = {}
         rpn_loss, proposal_list = self.rpn1_loss(
             student_info["rpn_out"],
@@ -482,7 +406,6 @@ class DualTeacher(MultiSteamDetector):
                 pseudo_bboxes,
                 pseudo_labels,
                 student_info=student_info,
-                reg_target_bboxes=reg_targets,
             )
         )
         return loss
@@ -534,39 +457,6 @@ class DualTeacher(MultiSteamDetector):
         else:
             return {}, None
 
-    def _m3_student_targets(self, teacher_info, transform, student_info, pseudo_bboxes):
-        if not self.m3_enabled:
-            return None
-        targets = self._transform_bbox(
-            teacher_info["reg_target_bboxes"], transform,
-            [meta["img_shape"] for meta in student_info["img_metas"]])
-        if len(targets) != len(pseudo_bboxes):
-            raise ValueError("M3 target batch does not match fused pseudo labels")
-        output = []
-        for chosen, original in zip(targets, pseudo_bboxes):
-            if chosen.shape != original[:, :4].shape:
-                raise ValueError("M3 anchor ordering/shape changed during transformation")
-            valid = (torch.isfinite(chosen).all(dim=1)
-                     & (chosen[:, 2] > chosen[:, 0]) & (chosen[:, 3] > chosen[:, 1]))
-            # Clipping/strong augmentation can collapse an otherwise valid box.
-            output.append(torch.where(valid[:, None], chosen, original[:, :4]).detach())
-        return output
-
-    def _m3_filter_reg_targets(self, pseudo_bboxes, targets):
-        if len(pseudo_bboxes) != len(targets):
-            raise ValueError("M3 target batches differ")
-        output = []
-        for original, chosen in zip(pseudo_bboxes, targets):
-            if chosen.shape != original[:, :4].shape:
-                raise ValueError("M3 targets must follow fused pseudo-label ordering")
-            # Exactly filter_invalid's original regression rule. The selected
-            # teacher's uncertainty does NOT change which GT/RoIs are sampled.
-            keep = ((-original[:, 5:].mean(dim=-1) > -self.train_cfg.reg_pseudo_threshold)
-                    & (original[:, 2] > original[:, 0])
-                    & (original[:, 3] > original[:, 1]))
-            output.append(chosen[keep].detach())
-        return output
-
     def _log_m2_stats(self, branch, num_pos, num_neg, Z_0, w_pos=None):
         """Log positive-ROI diagnostics (INFO, every call).
 
@@ -584,13 +474,6 @@ class DualTeacher(MultiSteamDetector):
             get_root_logger().info(
                 f"[ROI-{branch}] pos={num_pos} neg={num_neg} Z0={float(Z_0):.2f}")
 
-    def _filter_cls_pseudo(self, bbox, label, score):
-        if self.mvdt is None:
-            return filter_invalid(bbox, label, score, thr=self.train_cfg.cls_pseudo_threshold)
-        valid = self.mvdt.eligible(score)
-        # Keep the original positive width/height filtering. MVDT changes only
-        # confidence admission; RPN / regression call filter_invalid directly.
-        return filter_invalid(bbox[valid], label[valid])
 
     def unsup1_rcnn_cls_loss(
         self,
@@ -608,10 +491,11 @@ class DualTeacher(MultiSteamDetector):
         **kwargs,
     ):
         gt_bboxes, gt_labels, _ = multi_apply(
-            self._filter_cls_pseudo,
+            filter_invalid,
             [bbox[:, :4] for bbox in pseudo_bboxes],
             pseudo_labels,
             [bbox[:, 4] for bbox in pseudo_bboxes],
+            thr=self.train_cfg.cls_pseudo_threshold,
         )
         log_every_n(
             {"rcnn_cls_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
@@ -709,7 +593,6 @@ class DualTeacher(MultiSteamDetector):
         pseudo_bboxes,
         pseudo_labels,
         student_info=None,
-        reg_target_bboxes=None,
         **kwargs,
     ):
         gt_bboxes, gt_labels, _ = multi_apply(
@@ -722,8 +605,6 @@ class DualTeacher(MultiSteamDetector):
         log_every_n(
             {"rcnn_reg_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
         )
-        if reg_target_bboxes is not None:
-            kwargs["reg_target_bboxes"] = self._m3_filter_reg_targets(pseudo_bboxes, reg_target_bboxes)
         loss_bbox = self.student1.roi_head.forward_train(
             feat, img_metas, proposal_list, gt_bboxes, gt_labels, **kwargs
         )["loss_bbox"]
@@ -856,7 +737,7 @@ class DualTeacher(MultiSteamDetector):
         return teacher_info
 
     def compute_uncertainty_with_aug_1(
-        self, feat, img_metas, proposal_list, proposal_label_list, return_boxes=False
+        self, feat, img_metas, proposal_list, proposal_label_list
     ):
         auged_proposal_list = self.aug_box(
             proposal_list, self.train_cfg.jitter_times, self.train_cfg.jitter_scale
@@ -906,8 +787,6 @@ class DualTeacher(MultiSteamDetector):
             else unc
             for unc, wh in zip(box_unc, box_shape)
         ]
-        if return_boxes:
-            return box_unc, [bbox.detach() for bbox in bboxes]
         return box_unc
 
     @staticmethod
@@ -952,14 +831,21 @@ class DualTeacher(MultiSteamDetector):
                 "DualTeacher load/resume requires a full four-branch checkpoint. "
                 "For a fresh run, set load_from=None and use load1_from/load2_from."
             )
-        mvdt_keys = [key for key in state_dict if key.startswith(prefix + "mvdt.")]
-        if self.mvdt is None and mvdt_keys:
+        pg_keys = [key for key in state_dict if key.startswith(prefix + "pg.")]
+        if self.pg is None and pg_keys:
             if self.train_cfg is not None:
-                raise RuntimeError("An MVDT training checkpoint requires mvdt_enabled=True")
-            # Inference selects an existing detector branch. Training-only
-            # threshold history is not needed and must not require a train_cfg.
-            for key in mvdt_keys:
+                raise RuntimeError("A PG checkpoint requires the matching PG training config")
+            for key in pg_keys:
                 state_dict.pop(key)
+        if any(key.startswith(prefix + "mvdt.") or ".quality_head." in key for key in state_dict):
+            raise RuntimeError("Retired experimental checkpoint; use the original archived code")
+        for name in self.submodules:
+            head_prefix = prefix + name + ".roi_head.foreground_head."
+            loaded = {key for key in state_dict if key.startswith(head_prefix)}
+            expected = {prefix + name + "." + key for key in getattr(self, name).state_dict()
+                        if key.startswith("roi_head.foreground_head.")}
+            if loaded != expected:
+                raise RuntimeError("Foreground checkpoint/config mismatch for " + name)
         return super()._load_from_state_dict(
             state_dict,
             prefix,
@@ -1001,7 +887,6 @@ class DualTeacher(MultiSteamDetector):
             [meta["img_shape"] for meta in student_info["img_metas"]],
         )
         pseudo_labels = teacher_info["det_labels"]
-        reg_targets = self._m3_student_targets(teacher_info, M, student_info, pseudo_bboxes)
         loss = {}
         rpn_loss, proposal_list = self.rpn2_loss(
             student_info["rpn_out"],
@@ -1044,7 +929,6 @@ class DualTeacher(MultiSteamDetector):
                 pseudo_bboxes,
                 pseudo_labels,
                 student_info=student_info,
-                reg_target_bboxes=reg_targets,
             )
         )
         return loss
@@ -1112,10 +996,11 @@ class DualTeacher(MultiSteamDetector):
         **kwargs,
     ):
         gt_bboxes, gt_labels, _ = multi_apply(
-            self._filter_cls_pseudo,
+            filter_invalid,
             [bbox[:, :4] for bbox in pseudo_bboxes],
             pseudo_labels,
             [bbox[:, 4] for bbox in pseudo_bboxes],
+            thr=self.train_cfg.cls_pseudo_threshold,
         )
         log_every_n(
             {"rcnn_cls_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
@@ -1213,7 +1098,6 @@ class DualTeacher(MultiSteamDetector):
         pseudo_bboxes,
         pseudo_labels,
         student_info=None,
-        reg_target_bboxes=None,
         **kwargs,
     ):
         gt_bboxes, gt_labels, _ = multi_apply(
@@ -1226,8 +1110,6 @@ class DualTeacher(MultiSteamDetector):
         log_every_n(
             {"rcnn_reg_gt_num": sum([len(bbox) for bbox in gt_bboxes]) / len(gt_bboxes)}
         )
-        if reg_target_bboxes is not None:
-            kwargs["reg_target_bboxes"] = self._m3_filter_reg_targets(pseudo_bboxes, reg_target_bboxes)
         loss_bbox = self.student2.roi_head.forward_train(
             feat, img_metas, proposal_list, gt_bboxes, gt_labels, **kwargs
         )["loss_bbox"]
@@ -1351,7 +1233,7 @@ class DualTeacher(MultiSteamDetector):
         return teacher_info
 
     def compute_uncertainty_with_aug_2(
-        self, feat, img_metas, proposal_list, proposal_label_list, return_boxes=False
+        self, feat, img_metas, proposal_list, proposal_label_list
     ):
         auged_proposal_list = self.aug_box(
             proposal_list, self.train_cfg.jitter_times, self.train_cfg.jitter_scale
@@ -1401,8 +1283,6 @@ class DualTeacher(MultiSteamDetector):
             else unc
             for unc, wh in zip(box_unc, box_shape)
         ]
-        if return_boxes:
-            return box_unc, [bbox.detach() for bbox in bboxes]
         return box_unc
 
     def foward_unsup12_train(self, teacher_data, student_data):
