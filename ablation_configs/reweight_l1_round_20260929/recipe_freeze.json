@@ -4,6 +4,28 @@
     "amp_coverage_basis": "已有配对一致性检查、端到端归因（RNG 快照恢复）与缩放反向专项检查，足以支持本轮实现验收收口；缺 AMP 的 B0-repeat 不改变该结论",
     "mechanism_verdict": "现有证据无法裁定（沿用误差分析结论）"
   },
+  "checkout_update": {
+    "checkout": "DualTeacher_ablation（后续训练实际使用的 checkout）",
+    "commit": "1f2c365e0fc38d7381cda69c97c1492df884fa42",
+    "method": "使用离线 Git bundle 快进；未解压源码 ZIP",
+    "source_check": "tools/train_ablation.py --check-source-only 通过；12 个 ssod 模块均从该 checkout 导入",
+    "reweight_source": {
+      "training_receipt_sha256": "cd30478c4ea8101e262696aed7cc2973c22366e4297e1ced222c2abe137ade3a",
+      "current_checkout_sha256": "1b1225daf49d3790588c93f760f32faf5e3fbe6bba579d9591f7623239e84a48",
+      "change_summary": "新增输入校验和默认关闭、限长的诊断记录；静态审阅认为加权算术未变，未重跑训练"
+    },
+    "paired_recompute": {
+      "status": "complete",
+      "exit_code": 0,
+      "script_sha256_prefix_before": "91fca134",
+      "script_sha256_prefix_after": "7421c8c6",
+      "output": "写入临时路径，未覆盖冻结文件",
+      "require_checkpoints": "通过；三个基线权重哈希均与各自 metadata 一致",
+      "previous_metrics_and_mean_deltas": "mAP、mAP_50、mAP_75、AR@100 逐折及均值与冻结记录逐位相同",
+      "mean_delta_mAP_s": 0.0147470121083176
+    },
+    "training_started": false
+  },
   "decided_at": "2026-10-01",
   "decision": "sup2 小背景 ROI 加权（lambda=1）保留为候选方案；实现与配方自此冻结，本轮不再改动",
   "frozen_evidence": {
@@ -113,6 +135,7 @@
     "module": "ssod/models/roi_heads/small_bkg_reweight.py",
     "module_sha256": "cd30478c4ea8101e262696aed7cc2973c22366e4297e1ced222c2abe137ade3a",
     "module_sha256_matches_training_receipt": true,
+    "module_sha256_note": "module_sha256 记录 2026-09-29 训练收据中的源码哈希，不代表当前 checkout 文件哈希。commit 1f2c365 的当前文件 SHA256 为 1b1225daf49d3790588c93f760f32faf5e3fbe6bba579d9591f7623239e84a48；变化是输入校验及默认关闭的限长诊断记录。静态审阅认为加权算术逐行未变，但没有重跑训练；既有收据哈希和训练结果仍按历史记录解释。",
     "variant_definition_equals_accepted": true,
     "variant_definition_evidence": "2026-09-29 18:32 断言各折 reweight_l1.py 的 model.model.roi_head 字典与验收补验目录 variant_config.py 逐项相等（见 launch_record.json: variant_equivalence）"
   },
