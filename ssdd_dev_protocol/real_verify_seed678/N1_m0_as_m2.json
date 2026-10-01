@@ -1,0 +1,60 @@
+{
+  "checkpoint": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/dev_ssdd/phase3_dual_teacher/3/6/iter_32000.pth",
+  "checks": {
+    "identity_errors": [
+      "meta.exp_name='phase3_dual_teacher_ssdd_dev.py' != expected 'phase3_dual_teacher_ssdd_dev_m2.py' (M0/M2 identity)",
+      "config m2_enabled=False != expected True (M0/M2 identity)"
+    ],
+    "identity_fields": {
+      "auto_resume": false,
+      "detector_type": "FasterRCNN",
+      "fold": 6,
+      "load1_from": "work_dirs/phase1_pretrain_optical/100/1/iter_8000.pth",
+      "load2_from": "work_dirs/dev_ssdd/phase2_pretrain_optical_sar/3/6/iter_11200.pth",
+      "load_from": null,
+      "m2_enabled": false,
+      "m2_force_weight_one": false,
+      "m3_enabled": false,
+      "max_keep_ckpts": 10,
+      "model_type": "DualTeacher",
+      "percent": 3,
+      "resume_from": null,
+      "runner_max_iters": 32000
+    },
+    "log_json": "../DualTeacher/work_dirs/dev_ssdd/phase3_dual_teacher/3/6/20260914_031619.log.json",
+    "log_last_train_iter": 32000,
+    "log_seed": 678,
+    "meta_epoch": 5,
+    "meta_exp_name": "phase3_dual_teacher_ssdd_dev.py",
+    "meta_iter": 31999,
+    "meta_seed": 678,
+    "sha256": "e03857138f773470a609b2c9052dfcf44ec7ba56036173944ddca3389d698077",
+    "size_bytes": 1448208979,
+    "snapshot_parse_error": "no config snapshot in work_dirs/m2_crossseed/seed678/m2/3/6"
+  },
+  "errors": [
+    "identity check failed: meta.exp_name='phase3_dual_teacher_ssdd_dev.py' != expected 'phase3_dual_teacher_ssdd_dev_m2.py' (M0/M2 identity); config m2_enabled=False != expected True (M0/M2 identity)"
+  ],
+  "evidence": {},
+  "expectation": {
+    "config_recipe": "configs/reproduce/phase3_dual_teacher_ssdd_dev_m2.py",
+    "expected_detector_type": "FasterRCNN",
+    "expected_exp_name": "phase3_dual_teacher_ssdd_dev_m2.py",
+    "expected_iters": 32000,
+    "expected_load1_from": "work_dirs/phase1_pretrain_optical/100/1/iter_8000.pth",
+    "expected_load2_from": "work_dirs/dev_ssdd/phase2_pretrain_optical_sar/3/6/iter_11200.pth",
+    "expected_m2_enabled": true,
+    "expected_m3_enabled": false,
+    "expected_max_keep_ckpts": 10,
+    "expected_model_type": "DualTeacher",
+    "fold": 6,
+    "percent": 3,
+    "run_dir": "work_dirs/m2_crossseed/seed678/m2/3/6",
+    "run_key": "seed678/m2/3/6",
+    "seed": 678,
+    "ver": "m2"
+  },
+  "ok": false,
+  "run_dir": "work_dirs/m2_crossseed/seed678/m2/3/6",
+  "run_key": "seed678/m2/3/6"
+}

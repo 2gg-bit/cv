@@ -1,0 +1,35 @@
+{
+  "phase": "phase3_dual_teacher_ssdd_dev_m2",
+  "seed": 678,
+  "max_iters": 32000,
+  "final_checkpoint": "iter_32000.pth",
+  "m2_enabled": true,
+  "m2_force_weight_one": false,
+  "config": "configs/reproduce/phase3_dual_teacher_ssdd_dev_m2.py",
+  "folds": {
+    "6": {
+      "status": "DONE",
+      "checkpoint": "work_dirs/dev_ssdd/phase3_dual_teacher_m2_32000/3/6/iter_32000.pth",
+      "sha256": "37d29bedc32adad0",
+      "iters_32000": true,
+      "seed_678": true,
+      "nan": 0
+    },
+    "7": {
+      "status": "DONE",
+      "checkpoint": "work_dirs/dev_ssdd/phase3_dual_teacher_m2_32000/3/7/iter_32000.pth",
+      "sha256": "cfb9b75fc2e9bffc",
+      "iters_32000": true,
+      "seed_678": true,
+      "nan": 0
+    },
+    "8": {
+      "status": "DONE",
+      "checkpoint": "work_dirs/dev_ssdd/phase3_dual_teacher_m2_32000/3/8/iter_32000.pth",
+      "sha256": "68babcf1ff2a164f",
+      "iters_32000": true,
+      "seed_678": true,
+      "nan": 0
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "goal": "在 DIOR+SSDD 上建立可信开发对照，判断 Soft-NMS 是否值得保留，再决定新增哪一种单变量改动；暂不添加网络部件",
+  "scope": "已有方法消融（后处理对照），不是论文核心创新",
+  "data_and_domain": {
+    "training": "DIOR(光学 2706 图) + SSDD 少样本监督(3 图/组) + SSDD 无监督",
+    "dev_set": "从 SSDD 原训练池划分，约 20% (186 图)，排除三组监督图，见 data/split_manifest.json",
+    "test_set": "SSDD 官方测试集(232 图)保持不变，本轮不评估",
+    "disclosure": "本轮额外使用了开发集标注(186 图)。只能说“训练监督为三张 SAR 图像”，不能说整个方法开发仅使用三张标注图"
+  },
+  "fixed_inputs": {
+    "three_original_image_selection": "fold 6/7/8 不变",
+    "training_seed": 678,
+    "init_phase1": "复用原 Phase1 权重(核验后)",
+    "init_phase2": "DIOR + 3 监督 SSDD（排除开发图后重新训练）",
+    "init_phase3": "从对应 Phase1/2 初始化，重新训练到 32000 iter",
+    "final_checkpoint": "iter_32000.pth（不挑最佳、不从旧 Phase3 恢复）"
+  },
+  "inference": {
+    "branch": "teacher2 only",
+    "preprocessing": "与原 M0 一致（FP16、分辨率、测试增强不变）"
+  },
+  "comparison": {
+    "A": {"name": "原 Hard-NMS", "iou_threshold": 0.5, "entry_score": "p_ship>0.05", "max_per_img": 100},
+    "B": {"name": "Linear Soft-NMS", "method": "linear", "iou_threshold": 0.5, "min_score": 0.05, "offset": 0, "entry_score": "p_ship>0.05", "max_per_img": 100}
+  },
+  "metrics": {
+    "primary": "COCO AP (0.50~0.95)",
+    "secondary": ["AP50", "AP75", "APs", "AR@100"],
+    "also_report": ["APm", "APl", "AP85", "背景(max_iou_lt_05)", "重复检测", "输出框数"],
+    "full_report_rule": "三组完整结果表，不只看上涨项，不把三组差异称为种子方差"
+  },
+  "decision_rules": {
+    "no_early_stop": "不根据第一组结果决定是否继续另外两组",
+    "no_threshold_search": "本阶段不搜索新阈值，不训练 M1，不叠加其他部件",
+    "baseline_note": "新训练池下的基线，不能直接与旧基线 AP 作模块增益比较"
+  },
+  "current_deliverables": ["实验协议", "开发划分清单", "数据隔离检查", "三组新配置"],
+  "status": "仅完成协议/划分/隔离/配置，尚未启动长训"
+}

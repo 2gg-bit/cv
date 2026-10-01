@@ -1,0 +1,54 @@
+[
+  {
+    "path": "ssdd_dev_protocol/README.md",
+    "sha256": "cf003102a2c4be7a90b4f5bd7d3543cd7bd38725b88e00a5e7006658e99aa016"
+  },
+  {
+    "path": "ssdd_dev_protocol/build_split.py",
+    "sha256": "3cade2c8f9e93c46091dab7aa8d2c14eba1138cce13eb877cc7ea6321449157d"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/dev.json",
+    "sha256": "b700d858ae15e1155013f2a01c6622374d73360bc9120403367cf8e5c674b441"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/dev_image_ids.json",
+    "sha256": "9cb2ed367fe9d2ef7311a850280bc06358caf1dd5d7a8aebe12aad98fd6f962e"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/instances_train2017.6@3-unlabeled-dev.json",
+    "sha256": "a0aba112c5bd371e1bc13eb4ab5a28de75e05984003d6b1a8b3900b6d3d1da2d"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/instances_train2017.7@3-unlabeled-dev.json",
+    "sha256": "e62ca5513ea7eadfb08b9552c9a9791f23b23ae1b3de35b94fb7107d8d20ef5d"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/instances_train2017.8@3-unlabeled-dev.json",
+    "sha256": "3d702ccbba7149b4d88ad6cbfabea2c70e202fa0f842bdd764b5690ce6b84ab2"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/isolation_check.json",
+    "sha256": "a559180197e95d9a6d55cea3ce1cc27827c1d220e04e0538a9ab38005b7221bd"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/leakage_check.json",
+    "sha256": "f907d380c4cdf139378c0e42dd49411adc6cb517444bd54a8c5c3c3792210f51"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/split_manifest.json",
+    "sha256": "f2afc4f86e067d622a6a114bc1a457e839344d7054e6cd70941f89d2cb8d3a9e"
+  },
+  {
+    "path": "ssdd_dev_protocol/data/train_pool.json",
+    "sha256": "c2261850c1fa5ba0996f77b19fe8efdb12c138f70e736a33f2f8c5a38dd74e72"
+  },
+  {
+    "path": "ssdd_dev_protocol/files_manifest.json",
+    "sha256": "545a22d0d9066a0de6dc8bae7970574e319e4dddf33a3e3080834cd17f82671e"
+  },
+  {
+    "path": "ssdd_dev_protocol/protocol.json",
+    "sha256": "3d88876442d6d6242b582451b271b9ac751676a1b711530f1e670af0a72cdb88"
+  }
+]

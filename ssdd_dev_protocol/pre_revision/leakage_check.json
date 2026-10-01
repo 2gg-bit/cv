@@ -1,0 +1,12 @@
+{
+  "dev_vs_supervised_overlap": [],
+  "dev_vs_supervised_overlap_count": 0,
+  "dev_vs_test_overlap": [],
+  "dev_vs_test_overlap_count": 0,
+  "dev_all_from_train_pool": true,
+  "dev_count": 186,
+  "supervised_retained_in_training_pool": true,
+  "dev_not_in_new_unlabeled": true,
+  "duplicate_group_split_between_dev_train": [],
+  "duplicate_group_split_count": 0
+}

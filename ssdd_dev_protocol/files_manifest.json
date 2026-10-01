@@ -1,0 +1,94 @@
+{
+  "git_revision": "f77f060cdcc7dbd2dde7c451a131c9efdad14c0a",
+  "generated_at": "2026-09-13 14:50:16",
+  "files": [
+    {
+      "path": "configs/reproduce/phase2_pretrain_optical_sar_dev.py",
+      "sha256": "067e6bcbd976f2ff94352387553b9b44a72653979dfc822cc700b1fbacdfe7d9"
+    },
+    {
+      "path": "configs/reproduce/phase3_dual_teacher_ssdd_dev.py",
+      "sha256": "77a996b7bc5fe079782fceced9c1d617363e2899b10e22d59858e33f5f67fac4"
+    },
+    {
+      "path": "ssdd_dev_protocol/README.md",
+      "sha256": "13064c385c95c83cf77ed90b8a65ad3f294b6df0729f84aea1cc56d297a9dc3e"
+    },
+    {
+      "path": "ssdd_dev_protocol/build_split.py",
+      "sha256": "dff3d9b47252fc8c955fc70874a09609be7461d79bd88417040832d28116e13a"
+    },
+    {
+      "path": "ssdd_dev_protocol/configs/resolved/configs_summary.json",
+      "sha256": "2bd1d7ea6ceed3a94c0a8c49799e6ba8e5b3630a39df66fd13f2478f796ab6cb"
+    },
+    {
+      "path": "ssdd_dev_protocol/configs/resolved/phase2_pretrain_optical_sar_dev_fold6.py",
+      "sha256": "7f8afb3c33894a7519e2bb1679a4a0793f32b84b167e1efba049d9867e9c142a"
+    },
+    {
+      "path": "ssdd_dev_protocol/configs/resolved/phase2_pretrain_optical_sar_dev_fold7.py",
+      "sha256": "2e7b55fbce0d4bd0717b32fa32371c837e461cc459d9b02b8648ba8c753739cb"
+    },
+    {
+      "path": "ssdd_dev_protocol/configs/resolved/phase2_pretrain_optical_sar_dev_fold8.py",
+      "sha256": "d6fe4be38e82b19a7689c36a585b0ac74bf7d89334ebc5f2936ead6f0119c064"
+    },
+    {
+      "path": "ssdd_dev_protocol/configs/resolved/phase3_dual_teacher_ssdd_dev_fold6.py",
+      "sha256": "564d38a7f4fcf633ab4bf2c1eb37ba88cdabf9855a17765a0f9fcf586cf1ec27"
+    },
+    {
+      "path": "ssdd_dev_protocol/configs/resolved/phase3_dual_teacher_ssdd_dev_fold7.py",
+      "sha256": "baaa78e7ce2ed70d520db37664b2696c9dd946645e45fdef185a4d27ea642ac6"
+    },
+    {
+      "path": "ssdd_dev_protocol/configs/resolved/phase3_dual_teacher_ssdd_dev_fold8.py",
+      "sha256": "697e4e53561d96dc0177e8e55f877656d006d34b7f400c9596f61a34f67257b8"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/dev.json",
+      "sha256": "b7fc7c9cdc482f062bc09d55783237149fb2141e630488a100b5ceddc88b0479"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/dev_image_ids.json",
+      "sha256": "9cb2ed367fe9d2ef7311a850280bc06358caf1dd5d7a8aebe12aad98fd6f962e"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/instances_train2017.6@3-unlabeled-dev.json",
+      "sha256": "a0aba112c5bd371e1bc13eb4ab5a28de75e05984003d6b1a8b3900b6d3d1da2d"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/instances_train2017.7@3-unlabeled-dev.json",
+      "sha256": "e62ca5513ea7eadfb08b9552c9a9791f23b23ae1b3de35b94fb7107d8d20ef5d"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/instances_train2017.8@3-unlabeled-dev.json",
+      "sha256": "3d702ccbba7149b4d88ad6cbfabea2c70e202fa0f842bdd764b5690ce6b84ab2"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/isolation_check.json",
+      "sha256": "a559180197e95d9a6d55cea3ce1cc27827c1d220e04e0538a9ab38005b7221bd"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/leakage_check.json",
+      "sha256": "d74a846fa94c117d43818e379b88a6464d9234afe0dce63a942570fe6c2ac1e8"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/split_manifest.json",
+      "sha256": "df5a61f2a3daad6ead3c225d56ab774a2307f9a5865c7cbf434bc4b2a15092c9"
+    },
+    {
+      "path": "ssdd_dev_protocol/data/train_pool.json",
+      "sha256": "c2261850c1fa5ba0996f77b19fe8efdb12c138f70e736a33f2f8c5a38dd74e72"
+    },
+    {
+      "path": "ssdd_dev_protocol/protocol.json",
+      "sha256": "e7c1e615967d8db8d316c2005c32b4e2d066682a714b958c0d61400939716502"
+    },
+    {
+      "path": "ssdd_dev_protocol/weight_reuse.json",
+      "sha256": "4515672adef8a77fee339513abb71dea3d1aebf2eca934c68fdd21f2a2a81620"
+    }
+  ]
+}

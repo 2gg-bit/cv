@@ -1,0 +1,51 @@
+{
+  "git_revision": "f77f060cdcc7dbd2dde7c451a131c9efdad14c0a",
+  "git_dirty": true,
+  "config": "configs/reproduce/phase3_dual_teacher_ssdd.py",
+  "config_sha256": "cc41b5d09730d4a5cc137ad7dcbb7fc4d2601260ebccee4591b0df6ba4d284bc",
+  "config_snapshot": "work_dirs/m0_seed678/config_snapshot.py",
+  "config_snapshot_sha256": "cc41b5d09730d4a5cc137ad7dcbb7fc4d2601260ebccee4591b0df6ba4d284bc",
+  "test_ann_file": "data/ssdd/annotations/test.json",
+  "test_ann_sha256": "19aa601904243be548c1551b247f331f1317dc6a9bf4ac9911e6b07398ca919f",
+  "models": [
+    {
+      "fold": 6,
+      "checkpoint": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/m0_seed678/training/6/iter_32000.pth",
+      "checkpoint_sha256": "8597d1e49d5d715c6d27669be92b8897a239ac649de3478187b71e01bee32975",
+      "metadata_checkpoint_sha256": "8597d1e49d5d715c6d27669be92b8897a239ac649de3478187b71e01bee32975",
+      "recorded_ap": null,
+      "generated_at": "2026-09-10 06:54:07"
+    },
+    {
+      "fold": 7,
+      "checkpoint": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/m0_seed678/training/7/iter_32000.pth",
+      "checkpoint_sha256": "672a0f87f5a2107252124bbc11ea13788c633a68d937b1017c166b49f434aa28",
+      "metadata_checkpoint_sha256": "672a0f87f5a2107252124bbc11ea13788c633a68d937b1017c166b49f434aa28",
+      "recorded_ap": null,
+      "generated_at": "2026-09-10 06:54:46"
+    },
+    {
+      "fold": 8,
+      "checkpoint": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/m0_seed678/training/8/iter_32000.pth",
+      "checkpoint_sha256": "35058a287eb36f8036864f0364168ead7d6eb1c7abc382d2b6d62ab953d494e7",
+      "metadata_checkpoint_sha256": "35058a287eb36f8036864f0364168ead7d6eb1c7abc382d2b6d62ab953d494e7",
+      "recorded_ap": null,
+      "generated_at": "2026-09-10 06:55:23"
+    }
+  ],
+  "env": {
+    "python": "3.8.20",
+    "torch": "1.7.0+cu110",
+    "mmcv": "1.3.9",
+    "mmdet": "2.16.0",
+    "cuda": true,
+    "note": "conda env 'dt'"
+  },
+  "step3_dev_set_status": {
+    "HRSID": "未就绪：仓库仅有 tools/dataset/semi_hrsid.py 与 configs，无 HRSID 图像/标注数据",
+    "ShipRSImageNet": "标注(COCO/VOC)在部署副本，JPEG 原图未就绪；且需先核查与训练数据是否来源重叠，本轮不擅自划为独立验证集",
+    "SSDD": "test(232图)为封存测试集；train(928图)已参与无监督训练，均不划为开发集",
+    "conclusion": "独立开发集未就绪，本轮仅完成工程验收(步骤1/2/4)，不进入开发集比较(步骤5/6)"
+  },
+  "generated_at": "2026-09-11 17:25:30"
+}

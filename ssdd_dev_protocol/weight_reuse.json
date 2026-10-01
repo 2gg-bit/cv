@@ -1,0 +1,34 @@
+{
+  "phase1": {
+    "decision": "REUSE（复用原权重）",
+    "checkpoint": "work_dirs/phase1_pretrain_optical/100/1/iter_8000.pth",
+    "sha256": "70627d7eee2a55f58ea7b471f50b1335ce0f632a278fed44b763a4e7b86ae169",
+    "source": "纯 DIOR 光学（2706 图），不含 SSDD",
+    "config": "configs/reproduce/phase1_pretrain_optical.py（train 仅 dior_annotations.json）",
+    "seed_note": "复用初始化，不受训练种子约束",
+    "verdict": "可复用"
+  },
+  "phase2": {
+    "decision": "RETRAIN（重新训练，seed=678）",
+    "old_checkpoints": {
+      "fold6": {
+        "path": "work_dirs/phase2_pretrain_optical_sar/3/6/iter_11200.pth",
+        "sha256": "e252f9c1e2db5649e698263c3f64cc553b32e832b8de69ac5e294fbb06a2c475"
+      },
+      "fold7": {
+        "path": "work_dirs/phase2_pretrain_optical_sar/3/7/iter_11200.pth",
+        "sha256": "c97550fd0e05070f8267e7f31ebe74544db646745c5805c13ee4fb4bd7d437e1"
+      },
+      "fold8": {
+        "path": "work_dirs/phase2_pretrain_optical_sar/3/8/iter_11200.pth",
+        "sha256": "45cc4962dc64c74f34f735d835377d2cd442dc56cb9a5fd70a3d81e3f07218fc"
+      }
+    },
+    "old_data": "2706 DIOR + 3 监督 SSDD（实例 ..._dior_annotations.json）",
+    "dev_images_in_old_phase2": "否（isolation_check.json 中 phase2_mixed_*_dev_overlap 全空）",
+    "old_seed": "无法确认是否为 678（config snapshot 无 seed 字段，训练于 2026-09-03，早于 seed=678 协议）",
+    "reason": "数据未见开发图，但旧 Phase2 训练种子非 678，不完全满足新协议 → 重训以对齐 seed=678",
+    "verdict": "重训（非复用）"
+  },
+  "generated_at": "2026-09-13 11:15:22"
+}

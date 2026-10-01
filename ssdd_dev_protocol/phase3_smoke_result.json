@@ -1,0 +1,18 @@
+{
+  "phase3_smoke_fold6": {
+    "status": "PASS",
+    "init": "PASS: T1=S1, T2=S2, T1!=T2; fusion=NMS, fusion_iou=0（Phase1 + 新 Phase2 fold6 严格加载 654 tensors）",
+    "seed": "678",
+    "iters": "100/100 + Saving checkpoint at 100 iterations",
+    "data": "sup2 3 监督图 + unsup 739 无标签图（不含开发图）",
+    "model": "原 M0 DualTeacher，未启用 M1/新模块",
+    "no_eval": true,
+    "no_resume": true,
+    "loss_finite": true,
+    "grad_norm_inf": "Iter[10/100] 出现 1 次 grad_norm=inf，Iter[20+] 全部有限(4.9~8.6)，loss 全程有限，无 NaN/OOM/DDP 错误；原因未定，不归因 warmup",
+    "memory_mb": "8720->9357 稳定",
+    "work_dir": "work_dirs/dev_ssdd/smoke_phase3/3/6",
+    "iter_100_sha256": "e3a8dfe5f2a20b9cb41373ab4c1c7f8213ddb6c356b911d96e7d68b7c46e5388"
+  },
+  "generated_at": "2026-09-14 03:15:54"
+}

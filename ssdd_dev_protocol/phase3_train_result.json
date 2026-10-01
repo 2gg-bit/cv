@@ -1,0 +1,33 @@
+{
+  "phase": "phase3_dual_teacher_ssdd_dev",
+  "seed": 678,
+  "max_iters": 32000,
+  "final_checkpoint": "iter_32000.pth",
+  "folds": {
+    "6": {
+      "status": "DONE",
+      "checkpoint": "work_dirs/dev_ssdd/phase3_dual_teacher/3/6/iter_32000.pth",
+      "sha256": "e03857138f773470a609b2c9052dfcf44ec7ba56036173944ddca3389d698077",
+      "iters_32000": true,
+      "seed_678": true,
+      "nan": 0
+    },
+    "7": {
+      "status": "DONE",
+      "checkpoint": "work_dirs/dev_ssdd/phase3_dual_teacher/3/7/iter_32000.pth",
+      "sha256": "1de1eb51a091d15b070fb2ce632932b4f0301200a34685603c687249eccfd716",
+      "iters_32000": true,
+      "seed_678": true,
+      "nan": 0
+    },
+    "8": {
+      "status": "DONE_RETRAIN_AFTER_ENOSPC",
+      "checkpoint": "work_dirs/dev_ssdd/phase3_dual_teacher/3/8/iter_32000.pth",
+      "sha256": "c6045e9a94d47af87202c1a77a08d01feecba339be7ecd8e0d33eb19175ec78d",
+      "iters_32000": true,
+      "seed_678": true,
+      "nan": 0,
+      "note": "首次训练因根分区 ENOSPC 在 iter~16000 失败，已从核验 Phase1/2 权重以 seed=678 重训完成，配置与 6/7 完全一致"
+    }
+  }
+}

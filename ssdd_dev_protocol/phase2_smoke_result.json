@@ -1,0 +1,19 @@
+{
+  "phase2_smoke_fold6": {
+    "status": "PASS",
+    "seed": "678 (logged \"Set random seed to 678\")",
+    "iters": "100/100",
+    "train_ann": "data/optical_ssdd/annotations/instances_train2017.6@3_dior_annotations.json (2706 DIOR + 3 监督 SSDD)",
+    "val_test_ann": "ssdd_dev_protocol/data/dev.json (开发集，非官方测试)",
+    "no_resume": true,
+    "auto_resume": false,
+    "resume_from": null,
+    "loss_finite": true,
+    "no_nan_oom_persistent_overflow": true,
+    "note": "首个10 iter日志窗口出现非有限梯度范数，后续记录恢复有限；具体原因尚未确定。不据此认定仅第10步发生一次，也不确认是 warmup 导致；无持续异常证据",
+    "no_eval": true,
+    "work_dir": "work_dirs/dev_ssdd/smoke_phase2/3/6",
+    "iter_100_sha256": "a8d58b8852eede057c05172eac8e258e6283c2ddd8423634ad4658c01852ac66"
+  },
+  "generated_at": "2026-09-13 14:53:10"
+}

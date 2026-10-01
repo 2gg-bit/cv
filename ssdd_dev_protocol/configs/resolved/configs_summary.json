@@ -1,0 +1,38 @@
+{
+  "phase2_pretrain_optical_sar_dev_fold6": {
+    "work_dir": "work_dirs/dev_ssdd/phase2_pretrain_optical_sar/3/6",
+    "auto_resume": false,
+    "val_ann": "ssdd_dev_protocol/data/dev.json",
+    "test_ann": "ssdd_dev_protocol/data/dev.json"
+  },
+  "phase3_dual_teacher_ssdd_dev_fold6": {
+    "work_dir": "work_dirs/dev_ssdd/phase3_dual_teacher/3/6",
+    "auto_resume": false,
+    "val_ann": "ssdd_dev_protocol/data/dev.json",
+    "test_ann": "ssdd_dev_protocol/data/dev.json"
+  },
+  "phase2_pretrain_optical_sar_dev_fold7": {
+    "work_dir": "work_dirs/dev_ssdd/phase2_pretrain_optical_sar/3/7",
+    "auto_resume": false,
+    "val_ann": "ssdd_dev_protocol/data/dev.json",
+    "test_ann": "ssdd_dev_protocol/data/dev.json"
+  },
+  "phase3_dual_teacher_ssdd_dev_fold7": {
+    "work_dir": "work_dirs/dev_ssdd/phase3_dual_teacher/3/7",
+    "auto_resume": false,
+    "val_ann": "ssdd_dev_protocol/data/dev.json",
+    "test_ann": "ssdd_dev_protocol/data/dev.json"
+  },
+  "phase2_pretrain_optical_sar_dev_fold8": {
+    "work_dir": "work_dirs/dev_ssdd/phase2_pretrain_optical_sar/3/8",
+    "auto_resume": false,
+    "val_ann": "ssdd_dev_protocol/data/dev.json",
+    "test_ann": "ssdd_dev_protocol/data/dev.json"
+  },
+  "phase3_dual_teacher_ssdd_dev_fold8": {
+    "work_dir": "work_dirs/dev_ssdd/phase3_dual_teacher/3/8",
+    "auto_resume": false,
+    "val_ann": "ssdd_dev_protocol/data/dev.json",
+    "test_ann": "ssdd_dev_protocol/data/dev.json"
+  }
+}
