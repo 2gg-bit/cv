@@ -5,10 +5,30 @@
     "mechanism_verdict": "现有证据无法裁定（沿用误差分析结论）"
   },
   "checkout_update": {
+    "date": "2026-10-01",
     "checkout": "DualTeacher_ablation（后续训练实际使用的 checkout）",
-    "commit": "1f2c365e0fc38d7381cda69c97c1492df884fa42",
+    "from_commit": "33bc558",
+    "code_commit": "1f2c365e0fc38d7381cda69c97c1492df884fa42",
+    "record_commit": "32748a714a80d85fd5e19bde1199151ebf49811c",
     "method": "使用离线 Git bundle 快进；未解压源码 ZIP",
-    "source_check": "tools/train_ablation.py --check-source-only 通过；12 个 ssod 模块均从该 checkout 导入",
+    "source_check": "在 1f2c365 与 32748a7 均通过 tools/train_ablation.py --check-source-only；12 个 ssod 模块均从该 checkout 导入",
+    "preupdate_backup": {
+      "path": "~/dual_teacher_project/_ablation_preupdate_backup_20261001",
+      "untracked_files_moved": 56,
+      "byte_identical_to_1f2c365": 50,
+      "older_versions_preserved": 6,
+      "all_paths_exist_in_1f2c365": true,
+      "content_lost": false
+    },
+    "local_patches": {
+      "files": [
+        "tools/check_ablation_step.py",
+        "tools/prepare_ablation_suite.py",
+        "tools/train_ablation.py"
+      ],
+      "preservation": "三个本地补丁保留在 stash；其修复已由 c5fa548 / 1f2c365 纳入并扩展",
+      "stash_positions_at_sync": "recipe_freeze 注记位于 stash@{0}，三个工具补丁位于 stash@{1}；索引仅描述当时状态"
+    },
     "reweight_source": {
       "training_receipt_sha256": "cd30478c4ea8101e262696aed7cc2973c22366e4297e1ced222c2abe137ade3a",
       "current_checkout_sha256": "1b1225daf49d3790588c93f760f32faf5e3fbe6bba579d9591f7623239e84a48",
@@ -22,6 +42,12 @@
       "output": "写入临时路径，未覆盖冻结文件",
       "require_checkpoints": "通过；三个基线权重哈希均与各自 metadata 一致",
       "previous_metrics_and_mean_deltas": "mAP、mAP_50、mAP_75、AR@100 逐折及均值与冻结记录逐位相同",
+      "per_fold_delta_mAP_s": {
+        "fold6": 0.018119776285136946,
+        "fold7": 0.0038866693617408687,
+        "fold8": 0.022234590678074984
+      },
+      "scope_note": "纯 numpy/pycocotools 复算；未训练、未重跑推理、未改既有预测或冻结数值文件",
       "mean_delta_mAP_s": 0.0147470121083176
     },
     "training_started": false
