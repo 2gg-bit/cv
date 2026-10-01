@@ -218,6 +218,8 @@ def run_scaled(cfg, dataset, batch, checkpoint, device, counters, snapshot,
     from mmdet.models import build_detector
 
     model = build_detector(cfg.model)
+    from ssod.models.roi_heads.small_bkg_reweight import enable_reweight_diagnostics
+    enable_reweight_diagnostics(model)
     wrap_fp16_model(model)          # the hook does this in before_run
     load_checkpoint(model, str(checkpoint), map_location="cpu", strict=True)
     model._pretrained_initialized = True

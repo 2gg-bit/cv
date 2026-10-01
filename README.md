@@ -1,5 +1,9 @@
 # Dual Teacher: A Semi-Supervised Co-Training Framework for Cross-Domain Ship Detection
 
+项目更新（2026-10-01）：已加入独立的 sup2 GIoU 辅助定位实验，以及小背景日志、配对复算护栏和配置生成修复。
+新实验默认不启动，原小背景重加权结果保留。配置生成、验收和训练说明见
+[sup2 定位约束](docs/sup2_giou_training.md)。旧 audit/dev 报告属于历史材料，不作为本轮有效对照。
+
 
 ## Introduction
 This is the reserch code of the IEEE Transactions on Geoscience and Remote Sensing 2023 paper.

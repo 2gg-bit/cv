@@ -24,6 +24,8 @@ The multiplier reuses the existing ``label_weights`` channel, so this needs no
 change to ``BBoxHead.loss`` (including its ``avg_factor`` denominator).
 """
 
+import math
+
 import numpy as np
 import torch
 
@@ -36,6 +38,13 @@ from mmdet.models.roi_heads.bbox_heads import Shared2FCBBoxHead
 DEFAULT_TAG = "sup2"
 DEFAULT_LAMBDA = 1.0
 DEFAULT_MAX_AREA = 32.0 ** 2
+
+
+def enable_reweight_diagnostics(model, max_records=16):
+    """Opt in from an acceptance tool; never called by the training entry point."""
+    for module in model.modules():
+        if isinstance(module, SmallBkgReweightBBoxHead):
+            module.enable_reweight_diagnostics(max_records)
 
 
 @HEADS.register_module()
@@ -60,20 +69,33 @@ class SmallBkgReweightBBoxHead(Shared2FCBBoxHead):
         self.reweight_max_area = float(reweight.get("max_area", DEFAULT_MAX_AREA))
         self.reweight_tag = reweight.get("tag", DEFAULT_TAG)
         if self.reweight_enabled:
-            if self.reweight_lambda < 0.0:
+            if not math.isfinite(self.reweight_lambda) or self.reweight_lambda < 0.0:
                 raise ValueError("reweight.lambda_ must be >= 0")
-            if not self.reweight_max_area > 0.0:
+            if not math.isfinite(self.reweight_max_area) or not self.reweight_max_area > 0.0:
                 raise ValueError("reweight.max_area must be > 0")
             if not isinstance(self.reweight_tag, str) or not self.reweight_tag:
                 raise ValueError("reweight.tag must be a non-empty string")
         # diagnostics only; a plain attribute (never a parameter or buffer), so
         # state_dict keys are identical to the unmodified head
         self.reweight_log = []
+        # Training must not retain every sampled ROI for all 32000 iterations.
+        # Acceptance tools explicitly enable a bounded diagnostic buffer.
+        self.reweight_log_limit = 0
 
     # ------------------------------------------------------------------ public
 
     def reset_reweight_log(self):
         self.reweight_log = []
+
+    def enable_reweight_diagnostics(self, max_records=16):
+        if type(max_records) is not int or max_records < 0:
+            raise ValueError("max_records must be a nonnegative integer")
+        self.reweight_log_limit = max_records
+        self.reset_reweight_log()
+
+    def _record_reweight(self, record):
+        self.reweight_log.append(record)
+        del self.reweight_log[:-self.reweight_log_limit]
 
     def get_targets(self,
                     sampling_results,
@@ -142,28 +164,32 @@ class SmallBkgReweightBBoxHead(Shared2FCBBoxHead):
 
     def _apply_reweight(self, reweight, labels, label_weights, neg_bboxes):
         num_neg = int(neg_bboxes.size(0))
-        record = dict(
-            image_index=int(reweight["image_index"]),
-            tag=reweight["tag"],
-            eligible=bool(reweight["eligible"]),
-            num_pos=int(labels.numel()) - num_neg,
-            num_neg=num_neg,
-            scale_factor=self._as_list(reweight["scale_factor"]),
-        )
+        recording = self.reweight_log_limit > 0
+        if recording:
+            record = dict(
+                image_index=int(reweight["image_index"]),
+                tag=reweight["tag"],
+                eligible=bool(reweight["eligible"]),
+                num_pos=int(labels.numel()) - num_neg,
+                num_neg=num_neg,
+                scale_factor=self._as_list(reweight["scale_factor"]),
+            )
         if not reweight["eligible"]:
-            record.update(n_reweighted=0, skipped="tag_mismatch")
-            self.reweight_log.append(record)
+            if recording:
+                record.update(n_reweighted=0, skipped="tag_mismatch")
+                self._record_reweight(record)
             return
         if num_neg == 0:
-            record.update(n_reweighted=0, skipped="no_negatives")
-            self.reweight_log.append(record)
+            if recording:
+                record.update(n_reweighted=0, skipped="no_negatives")
+                self._record_reweight(record)
             return
 
         # `_get_target_single` writes the negatives into the *trailing* num_neg
-        # slots; assert that here instead of trusting the convention silently.
-        neg_labels = labels[-num_neg:]
-        record["neg_labels_all_bg"] = bool(
-            torch.all(neg_labels == self.num_classes).item())
+        # slots. Diagnostics record the invariant for the independent checker.
+        if recording:
+            record["neg_labels_all_bg"] = bool(
+                torch.all(labels[-num_neg:] == self.num_classes).item())
 
         areas = self._original_areas(neg_bboxes, reweight["scale_factor"])
         small = areas < self.reweight_max_area
@@ -172,16 +198,17 @@ class SmallBkgReweightBBoxHead(Shared2FCBBoxHead):
         weight_before = label_weights[-num_neg:].clone()
         label_weights[-num_neg:] = weight_before * factor
 
-        record.update(
-            n_reweighted=int(small.sum().item()),
-            neg_boxes=self._as_list(neg_bboxes),
-            areas=self._as_list(areas),
-            small_mask=self._as_list(small),
-            factors=self._as_list(factor),
-            weight_before=self._as_list(weight_before),
-            weight_after=self._as_list(label_weights[-num_neg:]),
-        )
-        self.reweight_log.append(record)
+        if recording:
+            record.update(
+                n_reweighted=int(small.sum().item()),
+                neg_boxes=self._as_list(neg_bboxes),
+                areas=self._as_list(areas),
+                small_mask=self._as_list(small),
+                factors=self._as_list(factor),
+                weight_before=self._as_list(weight_before),
+                weight_after=self._as_list(label_weights[-num_neg:]),
+            )
+            self._record_reweight(record)
 
     def _original_areas(self, neg_bboxes, scale_factor):
         """Box areas divided by the per-image scale, i.e. in original px^2."""

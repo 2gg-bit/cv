@@ -35,9 +35,11 @@ def flatten_losses(losses):
 
 def compare_losses(kind, results, ratio=0.5):
     off, on = results["off"], results["on"]
-    if kind == "fg":
-        if set(on) - set(off) != {"sup1_loss_foreground:0", "sup2_loss_foreground:0"}:
-            raise AssertionError("FG auxiliary losses must occur on sup1/sup2 only")
+    if kind in ("fg", "sup2_giou"):
+        expected = ({"sup2_loss_giou:0"} if kind == "sup2_giou" else
+                    {"sup1_loss_foreground:0", "sup2_loss_foreground:0"})
+        if set(on) - set(off) != expected:
+            raise AssertionError("Unexpected auxiliary loss routing")
     elif set(off) != set(on):
         raise AssertionError("Unexpected detection loss keys")
     changed = []
@@ -48,7 +50,8 @@ def compare_losses(kind, results, ratio=0.5):
                 scale = ratio
         if key not in on:
             raise AssertionError("Missing baseline loss: " + key)
-        equal = torch.allclose(value * scale, on[key], atol=1e-6, rtol=1e-5)
+        equal = (torch.equal(value, on[key]) if kind == "sup2_giou" else
+                 torch.allclose(value * scale, on[key], atol=1e-6, rtol=1e-5))
         if kind == "m2" and key in ("unsup1_loss_cls:0", "unsup2_loss_cls:0"):
             if not equal:
                 changed.append(key)
@@ -59,8 +62,15 @@ def compare_losses(kind, results, ratio=0.5):
     if "identity" in results:
         identity = results["identity"]
         if set(identity) != set(off) or any(
-                not torch.allclose(v, identity[k], atol=1e-6, rtol=1e-5) for k, v in off.items()):
+                not (torch.equal(v, identity[k]) if kind == "sup2_giou" else
+                     torch.allclose(v, identity[k], atol=1e-6, rtol=1e-5)) for k, v in off.items()):
             raise AssertionError("Identity setting does not recover B0 losses")
+    if kind == "sup2_giou":
+        repeat = results.get("off_repeat", {})
+        if set(repeat) != set(off) or any(not torch.equal(v, repeat[k]) for k, v in off.items()):
+            raise AssertionError("Same-variant forward replay is not bitwise reproducible")
+        if not bool(on["sup2_loss_giou:0"] > 0):
+            raise IncompleteCheck("No nonzero sup2 positive GIoU loss; use another training batch")
 
 
 def run(args, output, report):
@@ -81,12 +91,14 @@ def run(args, output, report):
     cfg = patch_config(cfg)
     tc = cfg.model.train_cfg
     fg = cfg.model.model.roi_head.type == "ForegroundRoIHead"
+    giou = cfg.model.model.roi_head.type == "Sup2GIoURoIHead"
     pg_cfg = tc.get("pg")
-    if (cfg.model.type != "DualTeacher" or sum((bool(tc.get("m2_enabled")), fg, bool(pg_cfg))) != 1
+    if (cfg.model.type != "DualTeacher" or sum((bool(tc.get("m2_enabled")), fg, giou, bool(pg_cfg))) != 1
             or tc.get("m2_force_weight_one") or tc.get("mvdt_enabled") or tc.get("m3_enabled")
+            or cfg.model.model.roi_head.bbox_head.get("reweight", {}).get("enable")
             or cfg.get("load_from") or cfg.get("resume_from")):
         raise ValueError("Use a fresh config with exactly one experimental feature")
-    kind = "m2" if tc.get("m2_enabled") else "fg" if fg else "pg_" + pg_cfg.mode
+    kind = "m2" if tc.get("m2_enabled") else "fg" if fg else "sup2_giou" if giou else "pg_" + pg_cfg.mode
     cfg.dump(str(output / "resolved_config.py"))
     get_root_logger(log_file=str(output / "acceptance.log"), log_level="INFO")
     set_random_seed(args.seed, deterministic=True)
@@ -96,6 +108,10 @@ def run(args, output, report):
     if fg and any(not getattr(model, n).roi_head.foreground_enabled or
                   getattr(model, n).roi_head.foreground_loss_weight <= 0 for n in model.submodules):
         raise ValueError("Every FG branch must enable its auxiliary head")
+    giou_weight = cfg.model.model.roi_head.get("sup2_giou_weight", 1.0)
+    if giou and any(not getattr(model, n).roi_head.sup2_giou_enabled or
+                    getattr(model, n).roi_head.sup2_giou_weight <= 0 for n in model.submodules):
+        raise ValueError("GIoU experiment must enable a positive auxiliary weight")
     report.update(experiment=kind, config_sha256=file_hash(args.config),
                   seed=args.seed, batch_index=args.batch_index,
                   initialization={str(Path(p).resolve()): file_hash(p)
@@ -118,6 +134,12 @@ def run(args, output, report):
     fp16 = cfg.get("fp16") is not None
     if fp16:
         wrap_fp16_model(model)
+    optimizer = None
+    if giou and fp16:
+        from mmcv.runner import build_optimizer
+        from mmcv.runner.hooks.optimizer import Fp16OptimizerHook
+        optimizer = build_optimizer(model, cfg.optimizer)
+        scaler_state = copy.deepcopy(Fp16OptimizerHook(**dict(cfg.fp16)).loss_scaler.state_dict())
     state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
     rng = (random.getstate(), np.random.get_state(), torch.get_rng_state(), torch.cuda.get_rng_state_all())
     report.update(fp16=fp16, optimizer_updates=0, ema_updates=0)
@@ -131,7 +153,8 @@ def run(args, output, report):
         original_log(branch, num_pos, num_neg, normalizer, w_pos)
     model._log_m2_stats = capture
     results = {}
-    modes = ("off", "on") if fg else ("off", "on", "identity")
+    modes = ("off", "off_repeat", "on", "identity") if giou else (
+        ("off", "on") if fg else ("off", "on", "identity"))
     for mode in modes:
         model.pg = pg
         model.load_state_dict(state, strict=True)
@@ -145,6 +168,11 @@ def run(args, output, report):
         if fg:
             for name in model.submodules:
                 getattr(model, name).roi_head.foreground_enabled = mode != "off"
+        if giou:
+            for name in model.submodules:
+                roi = getattr(model, name).roi_head
+                roi.sup2_giou_enabled = mode in ("on", "identity")
+                roi.sup2_giou_weight = 0.0 if mode == "identity" else giou_weight
         model.m2_enabled = kind == "m2" and mode != "off"
         model.m2_force_weight_one = kind == "m2" and mode == "identity"
         if pg is not None:
@@ -156,13 +184,39 @@ def run(args, output, report):
             parameter.grad = None
         inputs = scatter(copy.deepcopy(batch), [torch.cuda.current_device()])[0]
         observations.clear()
-        with torch.cuda.amp.autocast(enabled=fp16):
+        # GIoU acceptance follows the actual training path: auto_fp16 decorators
+        # enable autocast inside the detector, not an extra wrapper around DualTeacher.
+        with torch.cuda.amp.autocast(enabled=fp16 and not giou):
             losses = model(return_loss=True, **inputs)
             total, _ = model._parse_losses(losses)
         model.pg = pg
         if not bool(torch.isfinite(total)):
             raise AssertionError("Nonfinite training loss")
-        total.backward()
+        scaler = None
+        if giou and fp16:
+            scaler = torch.cuda.amp.GradScaler()
+            scaler.load_state_dict(copy.deepcopy(scaler_state))
+        aux_grad_norm = None
+        if giou and mode == "on":
+            aux = losses.get("sup2_loss_giou")
+            if aux is None or not bool(aux.detach() > 0):
+                raise IncompleteCheck("GIoU auxiliary loss is uncovered in this batch")
+            target = model.student2.roi_head.bbox_head.fc_reg.weight
+            probe = torch.autograd.grad(scaler.scale(aux) if scaler else aux, target,
+                                        retain_graph=True, allow_unused=True)[0]
+            if probe is None:
+                raise AssertionError("GIoU is disconnected from bbox regression")
+            probe = probe.float() / (scaler.get_scale() if scaler else 1.0)
+            if not bool(torch.isfinite(probe).all()) or not bool(probe.abs().sum() > 0):
+                raise AssertionError("GIoU regression gradient is zero or nonfinite")
+            aux_grad_norm = float(probe.norm())
+        if scaler:
+            scaler.scale(total).backward()
+            scaler.unscale_(optimizer)
+            if scaler.state_dict() != scaler_state:
+                raise AssertionError("Acceptance unexpectedly updated the scaler")
+        else:
+            total.backward()
         gradients = {}
         for name, parameter in model.named_parameters():
             if name.startswith("teacher") and (parameter.requires_grad or parameter.grad is not None):
@@ -179,6 +233,16 @@ def run(args, output, report):
         results[mode] = flatten_losses(losses)
         report[mode] = dict(losses={k: float(v.mean()) for k, v in results[mode].items()},
                             foreground_gradient_norms=gradients, m2=copy.deepcopy(observations))
+        if giou:
+            changed = [k for k, v in model.state_dict().items()
+                       if not torch.equal(v.detach().cpu(), state[k])]
+            if changed:
+                raise AssertionError("Acceptance changed parameters/buffers: " + repr(changed))
+            report[mode].update(aux_regression_gradient_norm=aux_grad_norm,
+                                state_unchanged=True,
+                                scaled_backward=bool(scaler),
+                                scaler_state=scaler.state_dict() if scaler else None,
+                                scaler_updates=0)
         del losses, total, inputs
     compare_losses(kind, results, pg.start_ratio if pg is not None else 0.5)
     if kind == "m2" and any(report["on"]["m2"].get(n, {}).get("downweighted", 0) == 0

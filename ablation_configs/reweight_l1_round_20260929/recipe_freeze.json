@@ -149,7 +149,7 @@
     "max_area_note": "等于 32^2，按原图尺度面积判定小目标 ROI",
     "no_additional_modules": "不叠加 M2 / 前景辅助头 / PG hook 等其他模块",
     "no_lambda_search": "不继续搜索 lambda 的其他取值",
-    "target_tag": "sup2（教师2的未标注分支；不动 sup1）",
+    "target_tag": "sup2（student2 的有标注 SAR 监督分支；不动 sup1）",
     "training_recipe": "沿用 B0 原配方：seed 678、32000 iter、--no-validate、不加 --deterministic、每折从自己的 Phase1 / 对应 Phase2 初始化"
   },
   "next_stage": {

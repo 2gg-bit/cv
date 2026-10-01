@@ -74,15 +74,15 @@ STATS_INDEX = {
     'AR_l@1000': 11,
 }
 METRIC_ITEMS = tuple(STATS_INDEX)
-PRIMARY_ITEMS = ('mAP', 'mAP_50', 'mAP_75', 'AR@100')
+PRIMARY_ITEMS = ('mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'AR@100')
 
 EXPECTED_EVALUATION_DICT = (
     "dict(interval=4000, metric='bbox', type='SubModulesDistEvalHook')")
 FORBIDDEN_EVAL_KEYS = ('proposal_nums', 'iou_thrs', 'classwise', 'metric_items')
 EXPECTED_CLASS_DECL = "classes=('ship', )"
 
-VENDORED_COCO_PY = Path(
-    '/home/xcc/dual_teacher_project/thirdparty/mmdetection/mmdet/datasets/coco.py')
+VENDORED_COCO_PY = (Path(__file__).resolve().parents[2] / 'thirdparty' /
+                    'mmdetection/mmdet/datasets/coco.py')
 EVAL_TOOL = Path(__file__).resolve().parent / 'eval_teacher2_export.py'
 
 # Lines that must still be present in the vendored source for the transcription above
@@ -249,7 +249,7 @@ def compute_stats(predictions_path, gt_path, resolved_config_path):
     }
 
 
-def collect_side(label, run_dir):
+def collect_side(label, run_dir, require_checkpoint=False):
     """Read one run's artifacts and recompute its raw COCO stats."""
     run_dir = Path(run_dir)
     paths = {
@@ -284,11 +284,11 @@ def collect_side(label, run_dir):
 
     checkpoint = metadata.get('checkpoint')
     if checkpoint and Path(checkpoint).exists():
+        checkpoint_hash = sha256_file(checkpoint)
         side['checkpoint_rehash'] = {
             'path': checkpoint,
-            'sha256_now': sha256_file(checkpoint),
-            'matches_metadata': sha256_file(checkpoint)
-            == metadata.get('checkpoint_sha256'),
+            'sha256_now': checkpoint_hash,
+            'matches_metadata': checkpoint_hash == metadata.get('checkpoint_sha256'),
         }
     else:
         side['checkpoint_rehash'] = {
@@ -326,6 +326,12 @@ def collect_side(label, run_dir):
         k for k, v in rounded_ok.items() if v is None)
 
     side['checks'] = {
+        'checkpoint_sha256_is_valid': bool(re.fullmatch(
+            r'[0-9a-fA-F]{64}', metadata.get('checkpoint_sha256') or '')),
+        'checkpoint_hash_matches_if_present':
+            side['checkpoint_rehash']['matches_metadata'] is not False,
+        'required_checkpoint_verified': not require_checkpoint or
+            side['checkpoint_rehash']['matches_metadata'] is True,
         'predictions_count_matches_metadata':
             computed['num_predictions'] == metadata.get('num_predictions'),
         'test_ann_sha256_matches_metadata':
@@ -344,9 +350,11 @@ def collect_side(label, run_dir):
     return side
 
 
-def compare_pair(pair):
-    baseline = collect_side('%s:baseline' % pair['label'], pair['baseline_dir'])
-    variant = collect_side('%s:variant' % pair['label'], pair['variant_dir'])
+def compare_pair(pair, require_checkpoint=False):
+    baseline = collect_side('%s:baseline' % pair['label'], pair['baseline_dir'],
+                            require_checkpoint)
+    variant = collect_side('%s:variant' % pair['label'], pair['variant_dir'],
+                           require_checkpoint)
 
     shared = {
         'test_ann_identical_across_sides':
@@ -356,8 +364,8 @@ def compare_pair(pair):
         'params_identical_across_sides':
             baseline['params'] == variant['params'],
         'checkpoints_differ':
-            baseline['metadata']['checkpoint']
-            != variant['metadata']['checkpoint'],
+            baseline['metadata']['checkpoint_sha256']
+            != variant['metadata']['checkpoint_sha256'],
         'baseline_rounding_all_match': baseline['rounding_all_match'],
         'variant_rounding_all_match': variant['rounding_all_match'],
     }
@@ -380,7 +388,9 @@ def compare_pair(pair):
         'baseline': baseline,
         'variant': variant,
         'shared_checks': shared,
-        'consistent': all(shared.values()),
+        'consistent': (all(shared.values()) and
+                       all(baseline['checks'].values()) and
+                       all(variant['checks'].values())),
         'delta_raw': delta,
         'delta_from_stored_3dp': delta_from_stored,
         'primary': {item: {
@@ -392,6 +402,7 @@ def compare_pair(pair):
 
 
 def main():
+    global VENDORED_COCO_PY
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '--pair', nargs=3, action='append', required=True,
@@ -405,7 +416,15 @@ def main():
                              'many pairs are supplied; with fewer pairs the per-fold '
                              'deltas are still reported but no equal-weight mean is '
                              'produced and the exit code is non-zero')
+    parser.add_argument('--require-checkpoints', action='store_true',
+                        help='require both checkpoint files and verify their hashes; '
+                             'otherwise absence is recorded, never claimed verified')
+    parser.add_argument('--vendored-coco-py', type=Path, default=VENDORED_COCO_PY,
+                        help='installed/vendored mmdet datasets/coco.py to audit')
     args = parser.parse_args()
+    VENDORED_COCO_PY = args.vendored_coco_py.resolve()
+    if args.expect_pairs < 0:
+        parser.error('--expect-pairs must be nonnegative')
 
     out_path = Path(args.out).resolve()
     if out_path.exists():
@@ -415,6 +434,11 @@ def main():
 
     pairs = [{'label': label, 'baseline_dir': b, 'variant_dir': v}
              for label, b, v in args.pair]
+    identities = [(str(Path(p['baseline_dir']).resolve()),
+                   str(Path(p['variant_dir']).resolve())) for p in pairs]
+    if (len({p['label'] for p in pairs}) != len(pairs) or
+            len(set(identities)) != len(pairs)):
+        parser.error('pair labels and baseline/variant pairs must be unique')
 
     if args.expect_pairs and len(pairs) > args.expect_pairs:
         raise SystemExit('got %d pairs but expected at most %d'
@@ -429,7 +453,7 @@ def main():
 
     provenance = check_provenance(resolved_configs)
 
-    results = [compare_pair(pair) for pair in pairs]
+    results = [compare_pair(pair, args.require_checkpoints) for pair in pairs]
 
     labels = [row['label'] for row in results]
     all_consistent = all(row['consistent'] for row in results)
@@ -444,6 +468,7 @@ def main():
                 'mAP': row['delta_raw']['mAP'],
                 'mAP_50': row['delta_raw']['mAP_50'],
                 'mAP_75': row['delta_raw']['mAP_75'],
+                'mAP_s': row['delta_raw']['mAP_s'],
                 'AR@100': row['delta_raw']['AR@100'],
             } for row in results},
         }
@@ -487,13 +512,14 @@ def main():
         'pairs': results,
         'aggregate': aggregate,
         'expected_pairs': args.expect_pairs,
+        'require_checkpoints': args.require_checkpoints,
         'reporting_scope': ('per-fold deltas only; no equal-weight mean was produced '
                             'because fewer folds than expected were supplied'
                             if partial else 'all supplied folds'),
         'status': status,
     }
 
-    with open(out_path, 'w', encoding='utf-8') as fh:
+    with open(out_path, 'x', encoding='utf-8') as fh:
         json.dump(payload, fh, indent=2, ensure_ascii=False, sort_keys=True)
         fh.write('\n')
 
@@ -515,10 +541,10 @@ def main():
                   % [k for k, v in row['variant']['checks'].items() if not v])
     if aggregate is not None:
         print('equal-weight mean delta over %d folds: mAP %+.6f  AP50 %+.6f  '
-              'AP75 %+.6f  AR@100 %+.6f'
+              'AP75 %+.6f  APs %+.6f  AR@100 %+.6f'
               % (aggregate['n_folds'], aggregate['mean_delta_mAP'],
                  aggregate['mean_delta_mAP_50'], aggregate['mean_delta_mAP_75'],
-                 aggregate['mean_delta_AR@100']))
+                 aggregate['mean_delta_mAP_s'], aggregate['mean_delta_AR@100']))
     else:
         print('no equal-weight mean produced (status=%s): only the per-fold deltas '
               'above are reported' % status)

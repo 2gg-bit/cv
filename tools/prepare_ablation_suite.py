@@ -1,4 +1,4 @@
-"""Freeze a user-selected, valid B0 and generate four isolated experiments."""
+"""Freeze a user-selected B0 and generate explicitly selected experiments."""
 
 import argparse
 import hashlib
@@ -46,7 +46,7 @@ def annotation_paths(data):
 def main():
     from mmcv import Config, DictAction
     from ssod.utils import patch_config
-    from ssod.utils.ablation import make_suite, differences
+    from ssod.utils.ablation import make_suite, differences, ALL_EXPERIMENTS
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("baseline", help="Correct B0 config or resolved config, never selected automatically")
     parser.add_argument("--out-dir", required=True, help="New config/manifest directory")
@@ -54,6 +54,11 @@ def main():
     parser.add_argument("--seed", type=int, required=True, help="Same seed as B0")
     parser.add_argument("--fg-weight", type=float, default=0.1)
     parser.add_argument("--pg-start-ratio", type=float, default=0.5)
+    parser.add_argument("--experiments", nargs="+", choices=ALL_EXPERIMENTS,
+                        help="Default: original B0/M2/FG/PG suite. New independent "
+                             "choices: reweight_l1 and sup2_giou")
+    parser.add_argument("--giou-weight", type=float, default=1.0,
+                        help="Fixed auxiliary beta inside sup2; outer gamma is unchanged")
     parser.add_argument("--cfg-options", nargs="+", action=DictAction)
     args = parser.parse_args()
     if Path.cwd().resolve() != ROOT:
@@ -66,7 +71,8 @@ def main():
         cfg.merge_from_dict(args.cfg_options)
     cfg = patch_config(cfg)
     baseline = cfg._cfg_dict.to_dict()
-    suite = make_suite(baseline, work, args.seed, args.fg_weight, args.pg_start_ratio)
+    suite = make_suite(baseline, work, args.seed, args.fg_weight, args.pg_start_ratio,
+                       experiments=args.experiments, giou_weight=args.giou_weight)
     weights = {}
     for key in ("load1_from", "load2_from"):
         path = Path(baseline["model"]["train_cfg"][key]).resolve()
@@ -86,7 +92,7 @@ def main():
             config=str(target), sha256=file_hash(target),
             changes_vs_b0=differences(baseline, item))
     (output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-    print("Prepared B0 snapshot and four experiments: " + str(output))
+    print("Prepared baseline snapshot and " + ", ".join(suite) + ": " + str(output))
     print("Review manifest.json. No training was started; existing B0 does not need rerunning.")
 
 

@@ -180,3 +180,47 @@ def test_acceptance_detects_wrong_routing_and_uncovered_m2():
         checker.compare_losses("pg_both", dict(off=off, on=on, identity=off))
     with pytest.raises(checker.IncompleteCheck):
         checker.compare_losses("m2", dict(off=off, on=off, identity=off))
+
+
+def test_new_configs_preserve_original_losses_and_isolate_experiments(tmp_path):
+    cfg = baseline()
+    bbox = cfg["model"]["model"]["roi_head"]["bbox_head"]
+    bbox.update(type="Shared2FCBBoxHead", loss_bbox=dict(type="L1Loss", loss_weight=1.0))
+    original = copy.deepcopy(cfg)
+    suite = suite_tools.make_suite(cfg, tmp_path, 123,
+                                    experiments=("b0", "reweight_l1", "sup2_giou"))
+    assert cfg == original
+    for kind in ("reweight_l1", "sup2_giou"):
+        item = suite[kind]
+        for key in ("data", "optimizer", "runner", "evaluation", "custom_hooks"):
+            assert item[key] == cfg[key]
+        roi = item["model"]["model"]["roi_head"]
+        assert roi["bbox_head"]["loss_bbox"] == bbox["loss_bbox"]
+        assert item["model"]["train_cfg"] == suite["b0"]["model"]["train_cfg"]
+        assert len(item["custom_imports"]["imports"]) == 1
+    giou = suite["sup2_giou"]["model"]["model"]["roi_head"]
+    assert giou["sup2_giou_enabled"] and giou["sup2_giou_weight"] == 1.
+    assert "reweight" not in giou["bbox_head"]
+    assert suite["reweight_l1"]["model"]["model"]["roi_head"]["bbox_head"]["reweight"] == dict(
+        enable=True, lambda_=1., max_area=1024., tag="sup2")
+    assert len(suite_tools.make_suite(cfg, tmp_path, 123)) == 5  # legacy CLI default
+
+
+def test_giou_acceptance_requires_exact_replay_and_only_sup2_auxiliary_loss():
+    off = {k: torch.tensor(2.) for k in ("sup1_loss_cls:0", "sup2_loss_bbox:0", "unsup2_loss_bbox:0")}
+    on = dict(off, **{"sup2_loss_giou:0": torch.tensor(.2)})
+    passes = dict(off=copy.deepcopy(off), off_repeat=copy.deepcopy(off),
+                  identity=copy.deepcopy(off), on=copy.deepcopy(on))
+    checker.compare_losses("sup2_giou", passes)
+    bad = copy.deepcopy(passes)
+    bad["on"]["unsup2_loss_bbox:0"] += 1e-6
+    with pytest.raises(AssertionError):
+        checker.compare_losses("sup2_giou", bad)
+    bad = copy.deepcopy(passes)
+    bad["off_repeat"]["sup1_loss_cls:0"] += 1e-6
+    with pytest.raises(AssertionError):
+        checker.compare_losses("sup2_giou", bad)
+    bad = copy.deepcopy(passes)
+    bad["on"]["unsup2_loss_giou:0"] = torch.tensor(.2)
+    with pytest.raises(AssertionError):
+        checker.compare_losses("sup2_giou", bad)

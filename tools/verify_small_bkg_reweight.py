@@ -252,6 +252,8 @@ def run_variant(pass_name, variant, cfg, dataset, batch, checkpoint, device,
     # cfg.model is the DualTeacher dict and carries its own train_cfg/test_cfg;
     # this mirrors tools/check_ablation_step.py exactly
     model = build_detector(cfg.model)
+    from ssod.models.roi_heads.small_bkg_reweight import enable_reweight_diagnostics
+    enable_reweight_diagnostics(model)
     if pass_name == "train":
         wrap_fp16_model(model)
     # strict=True: a key mismatch anywhere is a hard failure, not a warning
@@ -441,6 +443,8 @@ def head_level_stage(cfg_b0, cfg_lambda0, cfg_lambda1, checkpoint, capture,
     for name, cfg in (("b0", cfg_b0), ("lambda0", cfg_lambda0),
                       ("lambda1", cfg_lambda1)):
         model = build_detector(cfg.model)  # CPU: only get_targets/loss are used
+        from ssod.models.roi_heads.small_bkg_reweight import enable_reweight_diagnostics
+        enable_reweight_diagnostics(model)
         load_checkpoint(model, str(checkpoint), map_location="cpu", strict=True)
         heads[name] = model.student2.roi_head.bbox_head
         rcnn_cfg = model.student2.roi_head.train_cfg
