@@ -1,0 +1,168 @@
+{
+  "fp32": {
+    "by_tag": {
+      "student1|sup1": {
+        "branch": "student1",
+        "images": 1,
+        "n_neg": 467,
+        "n_reweighted": 0,
+        "tag": "sup1"
+      },
+      "student1|unsup_student": {
+        "branch": "student1",
+        "images": 1,
+        "n_neg": 473,
+        "n_reweighted": 0,
+        "tag": "unsup_student"
+      },
+      "student2|sup2": {
+        "branch": "student2",
+        "images": 1,
+        "n_neg": 484,
+        "n_reweighted": 74,
+        "tag": "sup2"
+      },
+      "student2|unsup_student": {
+        "branch": "student2",
+        "images": 1,
+        "n_neg": 479,
+        "n_reweighted": 0,
+        "tag": "unsup_student"
+      }
+    },
+    "issues": [],
+    "records": [
+      {
+        "branch": "student1",
+        "eligible": false,
+        "n_neg": 467,
+        "n_reweighted": 0,
+        "num_pos": 45,
+        "skipped": "tag_mismatch",
+        "tag": "sup1"
+      },
+      {
+        "branch": "student1",
+        "eligible": false,
+        "n_neg": 473,
+        "n_reweighted": 0,
+        "num_pos": 39,
+        "skipped": "tag_mismatch",
+        "tag": "unsup_student"
+      },
+      {
+        "area_max": 33012.2081986638,
+        "area_min": 17.308288574686877,
+        "branch": "student2",
+        "eligible": true,
+        "factor_values": [
+          1.0,
+          2.0
+        ],
+        "issues": [],
+        "max_iou_vs_gt_among_reweighted": 0.018571867609987684,
+        "min_iou_margin_to_0_5": 0.4814281323900123,
+        "n_neg": 484,
+        "n_reweighted": 74,
+        "neg_labels_all_bg": true,
+        "num_pos": 28,
+        "reweighted_area_max": 993.7913985915678,
+        "reweighted_area_min": 17.308288574686877,
+        "skipped": null,
+        "tag": "sup2"
+      },
+      {
+        "branch": "student2",
+        "eligible": false,
+        "n_neg": 479,
+        "n_reweighted": 0,
+        "num_pos": 33,
+        "skipped": "tag_mismatch",
+        "tag": "unsup_student"
+      }
+    ]
+  },
+  "train": {
+    "by_tag": {
+      "student1|sup1": {
+        "branch": "student1",
+        "images": 1,
+        "n_neg": 467,
+        "n_reweighted": 0,
+        "tag": "sup1"
+      },
+      "student1|unsup_student": {
+        "branch": "student1",
+        "images": 1,
+        "n_neg": 489,
+        "n_reweighted": 0,
+        "tag": "unsup_student"
+      },
+      "student2|sup2": {
+        "branch": "student2",
+        "images": 1,
+        "n_neg": 484,
+        "n_reweighted": 83,
+        "tag": "sup2"
+      },
+      "student2|unsup_student": {
+        "branch": "student2",
+        "images": 1,
+        "n_neg": 494,
+        "n_reweighted": 0,
+        "tag": "unsup_student"
+      }
+    },
+    "issues": [],
+    "records": [
+      {
+        "branch": "student1",
+        "eligible": false,
+        "n_neg": 467,
+        "n_reweighted": 0,
+        "num_pos": 45,
+        "skipped": "tag_mismatch",
+        "tag": "sup1"
+      },
+      {
+        "branch": "student1",
+        "eligible": false,
+        "n_neg": 489,
+        "n_reweighted": 0,
+        "num_pos": 23,
+        "skipped": "tag_mismatch",
+        "tag": "unsup_student"
+      },
+      {
+        "area_max": 31114.382709333568,
+        "area_min": 1.0307920950232203,
+        "branch": "student2",
+        "eligible": true,
+        "factor_values": [
+          1.0,
+          2.0
+        ],
+        "issues": [],
+        "max_iou_vs_gt_among_reweighted": 0.0,
+        "min_iou_margin_to_0_5": 0.5,
+        "n_neg": 484,
+        "n_reweighted": 83,
+        "neg_labels_all_bg": true,
+        "num_pos": 28,
+        "reweighted_area_max": 995.4781153608795,
+        "reweighted_area_min": 1.0307920950232203,
+        "skipped": null,
+        "tag": "sup2"
+      },
+      {
+        "branch": "student2",
+        "eligible": false,
+        "n_neg": 494,
+        "n_reweighted": 0,
+        "num_pos": 18,
+        "skipped": "tag_mismatch",
+        "tag": "unsup_student"
+      }
+    ]
+  }
+}

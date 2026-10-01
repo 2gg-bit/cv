@@ -1,0 +1,8 @@
+[chain] 2026-09-29 18:33:54 chain started (pid 2300564)
+[chain] 2026-09-29 18:33:54 fold6 launching: /home/xcc/anaconda3/envs/dt/bin/python -m torch.distributed.launch --nproc_per_node=1 tools/train_ablation.py ablation_configs/fold6_seed678/reweight_l1.py --launcher pytorch --seed 678 --no-validate
+[chain] 2026-09-30 03:24:13 fold6 exit=0
+[chain] 2026-09-30 03:24:13 fold7 launching: /home/xcc/anaconda3/envs/dt/bin/python -m torch.distributed.launch --nproc_per_node=1 tools/train_ablation.py ablation_configs/fold7_seed678/reweight_l1.py --launcher pytorch --seed 678 --no-validate
+[chain] 2026-09-30 12:14:47 fold7 exit=0
+[chain] 2026-09-30 12:14:47 fold8 launching: /home/xcc/anaconda3/envs/dt/bin/python -m torch.distributed.launch --nproc_per_node=1 tools/train_ablation.py ablation_configs/fold8_seed678/reweight_l1.py --launcher pytorch --seed 678 --no-validate
+[chain] 2026-09-30 21:12:55 fold8 exit=0
+[chain] 2026-09-30 21:12:55 all folds finished

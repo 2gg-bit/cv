@@ -1,0 +1,39 @@
+{
+  "baseline_raw_precheck": {
+    "path": "ablation_configs/reweight_l1_round_20260929/baseline_raw_coco_recompute.json",
+    "role": "baseline side pinned at full precision before any variant number exists"
+  },
+  "chain_script_to_launch": {
+    "launch_timing": "only after the training chain has finished; one evaluation at a time, no concurrent GPU work",
+    "path": "ablation_configs/reweight_l1_round_20260929/run_reweight_l1_eval_chain_strict.sh",
+    "sha256": "8559c9174f4d0954874e9542f6e9639986217fabdc470d6d3aa5a70e38e30716",
+    "was_launched": false
+  },
+  "comparison_baseline": "that fold's existing ablation_configs/fold<N>_seed678/b0_evaluation, untouched",
+  "delta_source": {
+    "expect_pairs": 3,
+    "log": "ablation_configs/reweight_l1_round_20260929/paired_coco_delta.log",
+    "output": "ablation_configs/reweight_l1_round_20260929/paired_coco_delta.json",
+    "rule": "both sides recomputed through the same frozen COCOeval parameters; the delta comes from unrounded values; with fewer than three folds the deltas are still reported but no equal-weight mean is produced and the exit code is non-zero",
+    "script": {
+      "path": "tools/recompute_paired_coco_delta.py",
+      "sha256": "91fca1340466e5a38f9c070eed8fddb4ce8b12c9f6705d96b7ae3dab0d6cb542"
+    }
+  },
+  "evaluation_command_per_fold": "$PY tools/train_ablation.py ablation_configs/fold<N>_seed678/reweight_l1.py <WEIGHTS_ROOT>/fold<N>_seed678/reweight_l1/iter_32000.pth --eval --fold <N> --out-dir ablation_configs/fold<N>_seed678/reweight_l1_evaluation",
+  "on_stop": "reason written to eval_chain.log and the chain exits non-zero; nothing already produced is removed or overwritten",
+  "step": "evaluation of the reweight_l1 exploratory paired round",
+  "stop_conditions": [
+    "training exit code file absent or non-zero",
+    "final weights iterations/iter_32000.pth absent",
+    "evaluation output directory / log / exit-code file already exists",
+    "evaluation itself exits non-zero",
+    "paired-delta recomputation exits non-zero (rounding mismatch or missing fold)"
+  ],
+  "superseded_chain_script": {
+    "path": "ablation_configs/reweight_l1_round_20260929/run_reweight_l1_eval_chain.sh",
+    "reason": "it skipped a failed fold and continued, which does not match the convention that any failed step ends the run; kept on disk as the record of the change, never executed",
+    "sha256": "562d110f69266f27f8c9e0ac0525ee8b846d2099c90ba38009bb8fb7e841047e",
+    "was_launched": false
+  }
+}

@@ -1,0 +1,382 @@
+{
+  "coco_mAP_s_from_paired_coco_delta": {
+    "fold6": {
+      "baseline": 0.500303536079587,
+      "delta": 0.018119776285136946,
+      "variant": 0.5184233123647239
+    },
+    "fold7": {
+      "baseline": 0.5427194933517501,
+      "delta": 0.0038866693617408687,
+      "variant": 0.5466061627134909
+    },
+    "fold8": {
+      "baseline": 0.4708821430767572,
+      "delta": 0.022234590678074984,
+      "variant": 0.49311673375483217
+    }
+  },
+  "computed_from": "已有 predictions.bbox.json（未重跑推理、未训练、未用 GPU）",
+  "generated_at": "2026-10-01 08:36:50",
+  "per_run_counts": {
+    "fold6_b0": {
+      "bkg": 2401,
+      "bkg_ge0.9": 591,
+      "bkg_small": 2037,
+      "bkg_small_ge0.9_extension": 500,
+      "bkg_small_high0.7": 693,
+      "dupe": 11,
+      "num_preds": 2909,
+      "small_high0.7_total": 1008,
+      "tp": 497,
+      "tp_ge0.9": 487,
+      "tp_small_ge0.9_extension": 315,
+      "tp_small_high0.7": 315
+    },
+    "fold6_reweight_l1": {
+      "bkg": 2435,
+      "bkg_ge0.9": 602,
+      "bkg_small": 2111,
+      "bkg_small_ge0.9_extension": 509,
+      "bkg_small_high0.7": 711,
+      "dupe": 10,
+      "num_preds": 2953,
+      "small_high0.7_total": 1029,
+      "tp": 508,
+      "tp_ge0.9": 493,
+      "tp_small_ge0.9_extension": 317,
+      "tp_small_high0.7": 318
+    },
+    "fold7_b0": {
+      "bkg": 2578,
+      "bkg_ge0.9": 699,
+      "bkg_small": 2178,
+      "bkg_small_ge0.9_extension": 576,
+      "bkg_small_high0.7": 774,
+      "dupe": 2,
+      "num_preds": 3072,
+      "small_high0.7_total": 1092,
+      "tp": 492,
+      "tp_ge0.9": 482,
+      "tp_small_ge0.9_extension": 316,
+      "tp_small_high0.7": 318
+    },
+    "fold7_reweight_l1": {
+      "bkg": 2472,
+      "bkg_ge0.9": 635,
+      "bkg_small": 2028,
+      "bkg_small_ge0.9_extension": 518,
+      "bkg_small_high0.7": 740,
+      "dupe": 3,
+      "num_preds": 2976,
+      "small_high0.7_total": 1056,
+      "tp": 501,
+      "tp_ge0.9": 485,
+      "tp_small_ge0.9_extension": 315,
+      "tp_small_high0.7": 316
+    },
+    "fold8_b0": {
+      "bkg": 2569,
+      "bkg_ge0.9": 661,
+      "bkg_small": 2079,
+      "bkg_small_ge0.9_extension": 531,
+      "bkg_small_high0.7": 734,
+      "dupe": 9,
+      "num_preds": 3088,
+      "small_high0.7_total": 1073,
+      "tp": 510,
+      "tp_ge0.9": 494,
+      "tp_small_ge0.9_extension": 338,
+      "tp_small_high0.7": 338
+    },
+    "fold8_reweight_l1": {
+      "bkg": 2436,
+      "bkg_ge0.9": 655,
+      "bkg_small": 1998,
+      "bkg_small_ge0.9_extension": 553,
+      "bkg_small_high0.7": 739,
+      "dupe": 7,
+      "num_preds": 2946,
+      "small_high0.7_total": 1084,
+      "tp": 503,
+      "tp_ge0.9": 493,
+      "tp_small_ge0.9_extension": 345,
+      "tp_small_high0.7": 345
+    }
+  },
+  "protocol": {
+    "error_analysis_path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/error_analysis_b0_pgboth/code/error_analysis.py",
+    "error_analysis_sha256": "b2a845535baeb637f0ff7ed1dc0d70ddefe8a0f721d611ae617300a0917679d9",
+    "high_score_extension": 0.9,
+    "high_score_frozen": "score >= 0.7（冻结代码里的 PRED_SCORE_BANDS 高分段）",
+    "identity_check_bkg_dupe_tp_eq_num_preds": true,
+    "iou_thr": 0.5,
+    "shadow_frozen_script": {
+      "all_equal": true,
+      "compared_keys_per_run": {
+        "fold6_b0": 18,
+        "fold6_reweight_l1": 18,
+        "fold7_b0": 18,
+        "fold7_reweight_l1": 18,
+        "fold8_b0": 18,
+        "fold8_reweight_l1": 18
+      },
+      "frozen_script": "/home/xcc/桌面/snew/sar_opt_d3t_deploy/1资料/09_M2FG评估结果_fold6/score_thr_bkg.py",
+      "frozen_script_sha256": "c8cc497ae9f102eae8c6424a9ec5ba12eacf3fd187eff6b84269358a89007974"
+    },
+    "small_definition": "bbox w*h < 32^2",
+    "source_of_counts": "冻结的 code/error_analysis.py（legacy_* 贪心口径，与 score_thr_bkg.py 影子对照）"
+  },
+  "reading": {
+    "exploratory": "232 图测试集此前已参与方案选择，本轮仍是探索性配对实验，非独立验证",
+    "negative_bkg_result_does_not_erase_gain": "即使背景数没有下降，也不影响 paired_coco_delta.json 里已记录的 mAP 增益",
+    "not_a_causal_proof": "该表只计数导出预测，不区分成因（未产生好框 / 被分数过滤 / 被 NMS 抑制一律未知），不能作为因果证明",
+    "purpose": "判断结果是否与最初假设一致（加权抑制高分小框背景）"
+  },
+  "runs": {
+    "fold6_b0": {
+      "checkpoint_sha256": "8a43beb47f6e172a04e7a3a275a8d854b88166c3bd098e4299dd604fd12fb7ba",
+      "eval_dir": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/fold6_seed678/b0_evaluation",
+      "predictions_sha256": "42bc9a331e44f2de4dae29b567240e8e41fd96e75bd1c09545f8463f82e81350"
+    },
+    "fold6_reweight_l1": {
+      "checkpoint_sha256": "20d87d4d39b731528d2b69a19e97bff010b51b6a3df0103ee232a798b3009c57",
+      "eval_dir": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/fold6_seed678/reweight_l1_evaluation",
+      "predictions_sha256": "f198d169fd917bac3240a2043bf745286efeca4dfc0a67fe21cf52e5fec2c606"
+    },
+    "fold7_b0": {
+      "checkpoint_sha256": "5bc520ed1d0e43ad009f26a41b78fa88761cab3e3f6bbde6722459895646384d",
+      "eval_dir": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/fold7_seed678/b0_evaluation",
+      "predictions_sha256": "d037f709485408de016828587c11b8d17929128fd4d333a3404f979e06ccaa4c"
+    },
+    "fold7_reweight_l1": {
+      "checkpoint_sha256": "0e4c25de34af80c2deea86e16a8bdb5d95c6c06a40e8f85d60556076744cfaf8",
+      "eval_dir": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/fold7_seed678/reweight_l1_evaluation",
+      "predictions_sha256": "a09e8b4cb64eb79ac1f09b676451360b985377900baf58d9053587d2d5017a48"
+    },
+    "fold8_b0": {
+      "checkpoint_sha256": "a30e5a317f8e525549a791b9e5b53d0597d7eb8683a46c8b6e3b9ee3133ecee3",
+      "eval_dir": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/fold8_seed678/b0_evaluation",
+      "predictions_sha256": "3fb6730c091c559c875cebc85d66693a09f52e5ed477d842d568ab934bdec63a"
+    },
+    "fold8_reweight_l1": {
+      "checkpoint_sha256": "bffb33ac34623a9f7cf441c73965dc9863f2f38d6b675b0f6f99c638fbca939e",
+      "eval_dir": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/fold8_seed678/reweight_l1_evaluation",
+      "predictions_sha256": "68b17afaf9e0695551831a9df3f40f913fd92f0a855fb6689bedf58b2304f32e"
+    }
+  },
+  "status": "complete",
+  "step": "效果对照表：高分小框背景误检与对应 TP 的变化",
+  "table": {
+    "bkg": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 2401,
+        "7": 2578,
+        "8": 2569
+      },
+      "delta": {
+        "6": 34,
+        "7": -106,
+        "8": -133
+      },
+      "mean_delta": -68.33333333333333,
+      "variant": {
+        "6": 2435,
+        "7": 2472,
+        "8": 2436
+      }
+    },
+    "bkg_ge0.9": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 591,
+        "7": 699,
+        "8": 661
+      },
+      "delta": {
+        "6": 11,
+        "7": -64,
+        "8": -6
+      },
+      "mean_delta": -19.666666666666668,
+      "variant": {
+        "6": 602,
+        "7": 635,
+        "8": 655
+      }
+    },
+    "bkg_small": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 2037,
+        "7": 2178,
+        "8": 2079
+      },
+      "delta": {
+        "6": 74,
+        "7": -150,
+        "8": -81
+      },
+      "mean_delta": -52.333333333333336,
+      "variant": {
+        "6": 2111,
+        "7": 2028,
+        "8": 1998
+      }
+    },
+    "bkg_small_ge0.9_extension": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 500,
+        "7": 576,
+        "8": 531
+      },
+      "delta": {
+        "6": 9,
+        "7": -58,
+        "8": 22
+      },
+      "mean_delta": -9.0,
+      "variant": {
+        "6": 509,
+        "7": 518,
+        "8": 553
+      }
+    },
+    "bkg_small_high0.7": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 693,
+        "7": 774,
+        "8": 734
+      },
+      "delta": {
+        "6": 18,
+        "7": -34,
+        "8": 5
+      },
+      "mean_delta": -3.6666666666666665,
+      "variant": {
+        "6": 711,
+        "7": 740,
+        "8": 739
+      }
+    },
+    "num_preds": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 2909,
+        "7": 3072,
+        "8": 3088
+      },
+      "delta": {
+        "6": 44,
+        "7": -96,
+        "8": -142
+      },
+      "mean_delta": -64.66666666666667,
+      "variant": {
+        "6": 2953,
+        "7": 2976,
+        "8": 2946
+      }
+    },
+    "small_high0.7_total": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 1008,
+        "7": 1092,
+        "8": 1073
+      },
+      "delta": {
+        "6": 21,
+        "7": -36,
+        "8": 11
+      },
+      "mean_delta": -1.3333333333333333,
+      "variant": {
+        "6": 1029,
+        "7": 1056,
+        "8": 1084
+      }
+    },
+    "tp": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 497,
+        "7": 492,
+        "8": 510
+      },
+      "delta": {
+        "6": 11,
+        "7": 9,
+        "8": -7
+      },
+      "mean_delta": 4.333333333333333,
+      "variant": {
+        "6": 508,
+        "7": 501,
+        "8": 503
+      }
+    },
+    "tp_ge0.9": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 487,
+        "7": 482,
+        "8": 494
+      },
+      "delta": {
+        "6": 6,
+        "7": 3,
+        "8": -1
+      },
+      "mean_delta": 2.6666666666666665,
+      "variant": {
+        "6": 493,
+        "7": 485,
+        "8": 493
+      }
+    },
+    "tp_small_ge0.9_extension": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 315,
+        "7": 316,
+        "8": 338
+      },
+      "delta": {
+        "6": 2,
+        "7": -1,
+        "8": 7
+      },
+      "mean_delta": 2.6666666666666665,
+      "variant": {
+        "6": 317,
+        "7": 315,
+        "8": 345
+      }
+    },
+    "tp_small_high0.7": {
+      "all_folds_same_sign": false,
+      "baseline": {
+        "6": 315,
+        "7": 318,
+        "8": 338
+      },
+      "delta": {
+        "6": 3,
+        "7": -2,
+        "8": 7
+      },
+      "mean_delta": 2.6666666666666665,
+      "variant": {
+        "6": 318,
+        "7": 316,
+        "8": 345
+      }
+    }
+  },
+  "table_markdown": "| 指标 | f6 B0 | f6 变体 | f6 Δ | f7 B0 | f7 变体 | f7 Δ | f8 B0 | f8 变体 | f8 Δ | 平均 Δ |\n|---|---|---|---|---|---|---|---|---|---|\n| 预测总数 | 2909 | 2953 | +44 | 3072 | 2976 | -96 | 3088 | 2946 | -142 | -64.67 |\n| 背景误检总数 | 2401 | 2435 | +34 | 2578 | 2472 | -106 | 2569 | 2436 | -133 | -68.33 |\n| 　其中分数 >= 0.9 | 591 | 602 | +11 | 699 | 635 | -64 | 661 | 655 | -6 | -19.67 |\n| 　其中小框 < 32^2 | 2037 | 2111 | +74 | 2178 | 2028 | -150 | 2079 | 1998 | -81 | -52.33 |\n| 　其中小框且分数 >= 0.7 | 693 | 711 | +18 | 774 | 740 | -34 | 734 | 739 | +5 | -3.67 |\n| 　其中小框且分数 >= 0.9（扩展切点） | 500 | 509 | +9 | 576 | 518 | -58 | 531 | 553 | +22 | -9.00 |\n| TP 总数 | 497 | 508 | +11 | 492 | 501 | +9 | 510 | 503 | -7 | +4.33 |\n| 　其中分数 >= 0.9 | 487 | 493 | +6 | 482 | 485 | +3 | 494 | 493 | -1 | +2.67 |\n| 　其中小框且分数 >= 0.7 | 315 | 318 | +3 | 318 | 316 | -2 | 338 | 345 | +7 | +2.67 |\n| 　其中小框且分数 >= 0.9（扩展切点） | 315 | 317 | +2 | 316 | 315 | -1 | 338 | 345 | +7 | +2.67 |\n| 小框且分数 >= 0.7 的预测数（含背景/TP/重复） | 1008 | 1029 | +21 | 1092 | 1056 | -36 | 1073 | 1084 | +11 | -1.33 |"
+}

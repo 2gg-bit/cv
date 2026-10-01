@@ -1,0 +1,243 @@
+{
+  "experiment": "reweight_l1",
+  "round": "reweight_l1_round_20260929",
+  "role": "sup2 小背景 ROI 加权（lambda=1，仅 sup2，原图尺度面积 < 32^2）的探索性配对实验：fold6/7/8 各一组，与各折本轮新 B0 逐折配对比较",
+  "not_independent_validation": {
+    "value": true,
+    "reason": "232 图测试集此前已参与方案选择（AP75 讨论），本轮结果只能作为探索性配对实验，不得称为独立验证；后续独立留出须用此前未参与选择的 SAR 图像/场景"
+  },
+  "launch_command": "bash ablation_configs/reweight_l1_round_20260929/run_reweight_l1_chain.sh  （脚本内逐折执行：$PY -m torch.distributed.launch --nproc_per_node=1 tools/train_ablation.py ablation_configs/fold<N>_seed678/reweight_l1.py --launcher pytorch --seed 678 --no-validate）",
+  "launch_command_provenance": "逐字实执行（本记录写于启动之前，启动行由 chain.log 落盘）",
+  "started_at": "2026-09-29 18:34",
+  "cwd": "/home/xcc/dual_teacher_project/DualTeacher_ablation",
+  "checkout_head": "33bc558a866bb08853e03b64e97949276d14065f",
+  "git_dirty": true,
+  "git_dirty_note": "工作区含既有本地工具补丁（tools/check_ablation_step.py、tools/prepare_ablation_suite.py、tools/train_ablation.py 的 SOURCE_MODULES 加一行）与本次新增文件（ssod/models/roi_heads/small_bkg_reweight.py 及 tools/verify_reweight_*.py、各折 reweight_l1.py）。训练实际导入的 9 个模块哈希以训练日志首行 [Ablation source] 为准",
+  "chain_script": {
+    "path": "ablation_configs/reweight_l1_round_20260929/run_reweight_l1_chain.sh",
+    "sha256": "1b83aae3f36646dd5da4d6803f74aa79d94c9e8ba1d47e9bde335450057f6461"
+  },
+  "flags": {
+    "seed": 678,
+    "no_validate": true,
+    "deterministic": false,
+    "auto_resume": false,
+    "load_from": null,
+    "resume_from": null,
+    "determinism_note": "正式训练按 B0 原配方；验收时用的确定性设置（set_random_seed deterministic、cudnn.benchmark=False 的显式固定）不带入本轮训练"
+  },
+  "module_switches": {
+    "roi_head_type": "SmallBkgReweightRoIHead",
+    "bbox_head_type": "SmallBkgReweightBBoxHead",
+    "reweight": {
+      "enable": true,
+      "lambda_": 1.0,
+      "max_area": 1024.0,
+      "tag": "sup2"
+    },
+    "m2_enabled": false,
+    "pg": "absent"
+  },
+  "variant_equivalence": {
+    "checked_at": "2026-09-29 18:32",
+    "method": "mmcv Config.fromfile 后比较 model.model.roi_head 字典，与已验收补验目录的 variant_config.py 逐项相等",
+    "accepted_variant_config": "ablation_configs/reweight_small_bkg_20260929_supplement/variant_config.py",
+    "config_diff_vs_b0": [
+      "custom_imports",
+      "model.model.roi_head.type",
+      "model.model.roi_head.bbox_head.type",
+      "model.model.roi_head.bbox_head.reweight",
+      "work_dir",
+      "ablation_experiment"
+    ],
+    "config_diff_note": "前四项即被验收的变体定义集合；后两项是本轮新目录/新实验名的命名改动。逐折 b0.py 与本折 reweight_l1.py 的 diff 只有这六处"
+  },
+  "configs": [
+    {
+      "fold": 6,
+      "path": "ablation_configs/fold6_seed678/reweight_l1.py",
+      "sha256": "4078d2af160d9f764e8e4e5c74d4dd003a20716520cbbe28718503748dd5e090",
+      "work_dir": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold6_seed678/reweight_l1",
+      "load1_from": "work_dirs/phase1_pretrain_optical/100/1/iter_8000.pth",
+      "load2_from": "work_dirs/phase2_pretrain_optical_sar/3/6/iter_11200.pth"
+    },
+    {
+      "fold": 7,
+      "path": "ablation_configs/fold7_seed678/reweight_l1.py",
+      "sha256": "802f49512555f472c736f4f55d3cff78a312daa4c58401bd68ff37506ca94974",
+      "work_dir": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold7_seed678/reweight_l1",
+      "load1_from": "work_dirs/phase1_pretrain_optical/100/1/iter_8000.pth",
+      "load2_from": "work_dirs/phase2_pretrain_optical_sar/3/7/iter_11200.pth"
+    },
+    {
+      "fold": 8,
+      "path": "ablation_configs/fold8_seed678/reweight_l1.py",
+      "sha256": "9d0a6d5a65640be98319b6d41210e703dad3ef1372d3b6bc5610fc47f415659f",
+      "work_dir": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold8_seed678/reweight_l1",
+      "load1_from": "work_dirs/phase1_pretrain_optical/100/1/iter_8000.pth",
+      "load2_from": "work_dirs/phase2_pretrain_optical_sar/3/8/iter_11200.pth"
+    }
+  ],
+  "init_checks": [
+    {
+      "fold": 6,
+      "log": "ablation_configs/fold6_seed678/reweight_l1_init.log",
+      "sha256": "8c69c53d8e6dbf5dc8f3583cf2bb0dbf8ea29bbb6f9a809197e3fd821b142a99",
+      "exit_code": 0,
+      "result": "teacher1/student1 自 phase1 .../100/1/iter_8000.pth、teacher2/student2 自 phase2 .../3/6/iter_11200.pth 各 strict 载入 654 个 state 张量；PASS: T1=S1, T2=S2, T1!=T2"
+    },
+    {
+      "fold": 7,
+      "log": "ablation_configs/fold7_seed678/reweight_l1_init.log",
+      "sha256": "af2aeb678aee4a30fb8a1d58979821233aadef92c8011bd2dfb3e17318652386",
+      "exit_code": 0,
+      "result": "同上，phase2 用 .../3/7/iter_11200.pth"
+    },
+    {
+      "fold": 8,
+      "log": "ablation_configs/fold8_seed678/reweight_l1_init.log",
+      "sha256": "f3c844a5678b9325bacbb19eaa989d9a956fa48540b33c305276c9754fa646e3",
+      "exit_code": 0,
+      "result": "同上，phase2 用 .../3/8/iter_11200.pth"
+    }
+  ],
+  "init_exit_code_files": "ablation_configs/fold<N>_seed678/reweight_l1_init_exit_code.txt（本轮新增的退出码落盘，既有变体只有 _init.log）",
+  "reference_b0": {
+    "note": "本轮各折新 B0（消融正式对照）的评估结果，作为配对基线；数值为 metrics.json 中保存的精度（三位小数）",
+    "runs": [
+      {"fold": 6, "metrics": "ablation_configs/fold6_seed678/b0_evaluation/metrics.json",
+       "bbox_mAP": 0.483, "bbox_mAP_50": 0.845, "bbox_mAP_75": 0.517, "bbox_AR@100": 0.571},
+      {"fold": 7, "metrics": "ablation_configs/fold7_seed678/b0_evaluation/metrics.json",
+       "bbox_mAP": 0.501, "bbox_mAP_50": 0.829, "bbox_mAP_75": 0.574, "bbox_AR@100": 0.583},
+      {"fold": 8, "metrics": "ablation_configs/fold8_seed678/b0_evaluation/metrics.json",
+       "bbox_mAP": 0.441, "bbox_mAP_50": 0.811, "bbox_mAP_75": 0.438, "bbox_AR@100": 0.563}
+    ]
+  },
+  "acceptance_provenance": {
+    "retained_acceptance": "ablation_configs/reweight_small_bkg_20260929/",
+    "supplement": "ablation_configs/reweight_small_bkg_20260929_supplement/",
+    "amp_scaled_backward": "ablation_configs/reweight_small_bkg_20260929_amp_scaled_backward/",
+    "amp_scaled_backward_repeat": "ablation_configs/reweight_small_bkg_20260929_amp_scaled_backward_repeat/",
+    "head_level_increment": 1.7696060240268707e-05,
+    "head_level_increment_note": "补验固定回放的头级 loss_cls 增量；端到端对应约 3.5392e-06（sup2_weight=0.2）。仅为实现生效证据，不代表精度收益"
+  },
+  "reweight_firing_evidence": {
+    "in_training_log": "训练日志只记录每 50 步的损失与 grad_norm，不含被加权 ROI 的逐迭代计数；因此训练日志本身不能证明加权在每一步命中",
+    "what_does_evidence_it": [
+      "train 日志首行 [Ablation source] 中 ssod.models.roi_heads.small_bkg_reweight sha256 = cd30478c4ea8101e262696aed7cc2973c22366e4297e1ced222c2abe137ade3a（与验收实现一致）",
+      "train 日志中配置转储含 roi_head.type='SmallBkgReweightRoIHead'、bbox_head.type='SmallBkgReweightBBoxHead'、reweight=dict(enable=True, lambda_=1.0, max_area=1024.0, tag='sup2')",
+      "验收轮证据：同一 batch 上 69（补验固定回放）/74（保留目录）个 sup2 背景 ROI 被乘 1.5…2.0 倍，且只改 sup2_loss_cls"
+    ]
+  },
+  "training_outcome": {
+    "status": "complete",
+    "recorded_at": "2026-09-30",
+    "source_of_truth": "ablation_configs/reweight_l1_round_20260929/chain.log 与各折 reweight_l1_train_exit_code.txt / reweight_l1_train.log",
+    "folds": [
+      {
+        "fold": 6,
+        "started": "2026-09-29 18:33:54",
+        "finished": "2026-09-30 03:24:13",
+        "wall_time_derived_from_chain_log": "8h50m19s",
+        "exit_code": 0,
+        "exit_code_file": "ablation_configs/fold6_seed678/reweight_l1_train_exit_code.txt",
+        "log": "ablation_configs/fold6_seed678/reweight_l1_train.log",
+        "final_weights": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold6_seed678/reweight_l1/iter_32000.pth",
+        "final_weights_sha256": "20d87d4d39b731528d2b69a19e97bff010b51b6a3df0103ee232a798b3009c57"
+      },
+      {
+        "fold": 7,
+        "started": "2026-09-30 03:24:13",
+        "finished": "2026-09-30 12:14:47",
+        "wall_time_derived_from_chain_log": "8h50m34s",
+        "exit_code": 0,
+        "exit_code_file": "ablation_configs/fold7_seed678/reweight_l1_train_exit_code.txt",
+        "log": "ablation_configs/fold7_seed678/reweight_l1_train.log",
+        "final_weights": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold7_seed678/reweight_l1/iter_32000.pth",
+        "final_weights_sha256": "0e4c25de34af80c2deea86e16a8bdb5d95c6c06a40e8f85d60556076744cfaf8"
+      },
+      {
+        "fold": 8,
+        "started": "2026-09-30 12:14:47",
+        "finished": "2026-09-30 21:12:55",
+        "wall_time_derived_from_chain_log": "8h58m08s",
+        "exit_code": 0,
+        "exit_code_file": "ablation_configs/fold8_seed678/reweight_l1_train_exit_code.txt",
+        "log": "ablation_configs/fold8_seed678/reweight_l1_train.log",
+        "final_weights": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold8_seed678/reweight_l1/iter_32000.pth",
+        "final_weights_sha256": "bffb33ac34623a9f7cf441c73965dc9863f2f38d6b675b0f6f99c638fbca939e"
+      }
+    ],
+    "log_statistics": {
+      "iter_log_lines_per_fold": 640,
+      "grad_norm_inf_windows": {"fold6": 14, "fold7": 14, "fold8": 13},
+      "grad_norm_inf_windows_same_recipe_b0": {"fold6": 14, "fold7": 13, "fold8": 14},
+      "nan_loss_lines": 0,
+      "traceback_lines": 0,
+      "out_of_memory_lines": 0,
+      "note": "三类异常分开计数：非有限 loss 行 0、逐迭代 grad_norm 采样为 inf 的窗口「折14/14/13」、异常退出 0。grad_norm: inf 在 B0 与变体各组均为 13–14/640，属跨组共同观察，成因未证实，不作为停止理由；未写 nonfinite: 0"
+    }
+  },
+  "evaluation_outcome": {
+    "status": "complete",
+    "recorded_at": "2026-09-30",
+    "chain_script": {
+      "path": "ablation_configs/reweight_l1_round_20260929/run_reweight_l1_eval_chain_strict.sh",
+      "sha256": "8559c9174f4d0954874e9542f6e9639986217fabdc470d6d3aa5a70e38e30716",
+      "started": "2026-09-30 21:23:38",
+      "finished": "2026-09-30 21:26:47",
+      "result": "三步全部通过（fold6 exit=0 / fold7 exit=0 / fold8 exit=0 / 复算 exit=0）；日志 eval_chain.log"
+    },
+    "superseded_chain_script": {
+      "path": "ablation_configs/reweight_l1_round_20260929/run_reweight_l1_eval_chain.sh",
+      "sha256": "562d110f69266f27f8c9e0ac0525ee8b846d2099c90ba38009bb8fb7e841047e",
+      "was_launched": false,
+      "reason": "旧版遇失败折会跳过继续，与本项目「任何一步失败即停」的约定不一致；改用 _strict 版，旧文件保留为修订记录"
+    },
+    "evaluation_command_per_fold": "/home/xcc/anaconda3/envs/dt/bin/python tools/train_ablation.py ablation_configs/fold<N>_seed678/reweight_l1.py <DualTeacher>/work_dirs/ablation_v1/fold<N>_seed678/reweight_l1/iter_32000.pth --eval --fold <N> --out-dir ablation_configs/fold<N>_seed678/reweight_l1_evaluation",
+    "baseline_side": "各折既有 ablation_configs/fold<N>_seed678/b0_evaluation，未被本轮修改；三折 checkpoint 哈希逐折核对（8a43beb4…／5bc520ed…／a30e5a31…），两侧 test.json 同为冻结的 232 图快照 19aa6019…",
+    "delta_source": {
+      "script": "tools/recompute_paired_coco_delta.py（纯 numpy/pycocotools，未 import torch，未用 GPU）",
+      "script_sha256": "91fca1340466e5a38f9c070eed8fddb4ce8b12c9f6705d96b7ae3dab0d6cb542",
+      "output": "ablation_configs/reweight_l1_round_20260929/paired_coco_delta.json",
+      "status": "complete",
+      "expect_pairs": 3,
+      "rule": "两侧同一份 COCOeval 参数（maxDets [100,300,1000]、iouThrs .50:.05:.95、useCats 默认、areaRng/recThrs 默认）各自复算未舍入值；Δ 取自未舍入值；并断言每侧复算值按 mmdet 口径四舍五入后等于该侧 metrics.json"
+    },
+    "variant_final_weights_sha256": {
+      "fold6": "20d87d4d39b731528d2b69a19e97bff010b51b6a3df0103ee232a798b3009c57",
+      "fold7": "0e4c25de34af80c2deea86e16a8bdb5d95c6c06a40e8f85d60556076744cfaf8",
+      "fold8": "bffb33ac34623a9f7cf441c73965dc9863f2f38d6b675b0f6f99c638fbca939e"
+    },
+    "per_fold_metrics_unrounded": [
+      {"fold": 6, "baseline": {"mAP": 0.482992, "AP50": 0.844883, "AP75": 0.517104, "AR@100": 0.571062},
+       "variant": {"mAP": 0.493222, "AP50": 0.852772, "AP75": 0.533958, "AR@100": 0.585714},
+       "delta": {"mAP": 0.010230, "AP50": 0.007890, "AP75": 0.016855, "AR@100": 0.014652}},
+      {"fold": 7, "baseline": {"mAP": 0.500575, "AP50": 0.828740, "AP75": 0.574046, "AR@100": 0.582967},
+       "variant": {"mAP": 0.501989, "AP50": 0.831458, "AP75": 0.599548, "AR@100": 0.591941},
+       "delta": {"mAP": 0.001415, "AP50": 0.002718, "AP75": 0.025502, "AR@100": 0.008974}},
+      {"fold": 8, "baseline": {"mAP": 0.440972, "AP50": 0.810999, "AP75": 0.437569, "AR@100": 0.562637},
+       "variant": {"mAP": 0.456531, "AP50": 0.820167, "AP75": 0.456311, "AR@100": 0.566300},
+       "delta": {"mAP": 0.015559, "AP50": 0.009168, "AP75": 0.018742, "AR@100": 0.003663}}
+    ],
+    "mean_delta_equal_weight_unrounded": {"mAP": 0.009068, "AP50": 0.006592, "AP75": 0.020366, "AR@100": 0.009096},
+    "note_on_precision": "上表为复算原始值（六位小数展示）；Δ 一律由未舍入值相减，不得由 metrics.json 的三位小数版本重算",
+    "framing": "探索性配对实验，非独立验证：232 图测试集此前已参与方案选择（见 not_independent_validation）；三折同向为正不改变该定位"
+  },
+  "weight_pruning": {
+    "date": "2026-09-30",
+    "rule": "训练+评估+记录完整后删中间权重与 latest.pth；删前先验证 latest.pth 与 iter_32000.pth 的 SHA256 相同（既定规则，无需再确认）",
+    "verified_before_delete": [
+      {"fold": 6, "iter_32000_sha256": "20d87d4d39b731528d2b69a19e97bff010b51b6a3df0103ee232a798b3009c57",
+       "latest_sha256": "20d87d4d39b731528d2b69a19e97bff010b51b6a3df0103ee232a798b3009c57", "identical": true},
+      {"fold": 7, "iter_32000_sha256": "0e4c25de34af80c2deea86e16a8bdb5d95c6c06a40e8f85d60556076744cfaf8",
+       "latest_sha256": "0e4c25de34af80c2deea86e16a8bdb5d95c6c06a40e8f85d60556076744cfaf8", "identical": true},
+      {"fold": 8, "iter_32000_sha256": "bffb33ac34623a9f7cf441c73965dc9863f2f38d6b675b0f6f99c638fbca939e",
+       "latest_sha256": "bffb33ac34623a9f7cf441c73965dc9863f2f38d6b675b0f6f99c638fbca939e", "identical": true}
+    ],
+    "deleted_per_fold": ["iter_4000.pth", "iter_8000.pth", "iter_12000.pth", "iter_16000.pth", "iter_20000.pth", "iter_24000.pth", "iter_28000.pth", "latest.pth"],
+    "deleted_total_files": 24,
+    "kept": "各折 work_dir 下的 iter_32000.pth、训练日志（*.log / *.log.json）、配置副本、rcnn_cls/rcnn_reg/rpn 子目录",
+    "not_touched": "各折 b0_evaluation 与 reweight_l1_evaluation 的评估产物，以及 ablation_configs 下的所有记录"
+  }
+}

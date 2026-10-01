@@ -1,0 +1,172 @@
+{
+  "coverage_notes": {
+    "amp_b0_repeat": "用户 2026-10-01 决定不再补做；继续如实注明该覆盖项未单独运行",
+    "amp_coverage_basis": "已有配对一致性检查、端到端归因（RNG 快照恢复）与缩放反向专项检查，足以支持本轮实现验收收口；缺 AMP 的 B0-repeat 不改变该结论",
+    "mechanism_verdict": "现有证据无法裁定（沿用误差分析结论）"
+  },
+  "decided_at": "2026-10-01",
+  "decision": "sup2 小背景 ROI 加权（lambda=1）保留为候选方案；实现与配方自此冻结，本轮不再改动",
+  "frozen_evidence": {
+    "effect_table": "ablation_configs/reweight_l1_round_20260929/effect_table.json",
+    "effect_table_protocol": "复用冻结的 code/error_analysis.py legacy_* 贪心口径，并再次对 score_thr_bkg.py 做影子对照（18 个共享键逐项相等）",
+    "effect_table_reading": {
+      "conclusion": "与最初假设部分一致但不构成支持：该特定子集未一致下降；表格只作符合性检查，不能作为因果证明；即使背景数不降也不影响 mAP 增益",
+      "high_score_small_bkg": "小框且分数≥0.7 的背景数三折 Δ = +18 / -34 / +5，平均 -3.67，三折不同向、量级远小于背景总数变化与 mAP 增益",
+      "tp": "legacy TP 总数两折增加、一折减少（Δ = +11 / +9 / -7）；COCO AR@100 三折增加（Δ = +0.014652 / +0.008974 / +0.003663）。两者统计口径不同，不能据此推断因果关系。",
+      "tp_correction": {
+        "corrected_at": "2026-10-01",
+        "reason": "原表述「TP 未因背景下降而受损」不成立：fold8 背景减少 133 的同时 legacy TP 也减少 7，无法支撑「未受损」。且 legacy TP（贪心一对一口径）与 COCO AR@100 是两套匹配器，不得互相推导，故只并列陈述、不作因果推断。",
+        "withdrawn": "TP 三折 Δ 平均 +4.33，未因背景下降而受损"
+      }
+    },
+    "effect_table_sha256": "7064b4cd69145459fe9197f61396591d8a253b184e8299be443bd885badb4fce",
+    "mean_delta_equal_weight": {
+      "AR@100": 0.009096459096459064,
+      "mAP": 0.009067930726567475,
+      "mAP_50": 0.006591829629313706,
+      "mAP_75": 0.020366316575217463,
+      "mAP_s": 0.0147470121083176
+    },
+    "paired_coco_delta": "ablation_configs/reweight_l1_round_20260929/paired_coco_delta.json",
+    "paired_coco_delta_sha256": "b229600539878d11e76f52f909fb8c89fe5682948e9cef4455a9ea55a6a79b19",
+    "per_fold": {
+      "fold6": {
+        "baseline": {
+          "AR@100": 0.571062271062271,
+          "mAP": 0.48299237545151613,
+          "mAP_50": 0.8448827688959585,
+          "mAP_75": 0.5171036133277597,
+          "mAP_s": 0.500303536079587
+        },
+        "delta": {
+          "AR@100": 0.0146520146520146,
+          "mAP": 0.010230080843488365,
+          "mAP_50": 0.00788972639886043,
+          "mAP_75": 0.016854641394508096,
+          "mAP_s": 0.018119776285136946
+        },
+        "variant": {
+          "AR@100": 0.5857142857142856,
+          "mAP": 0.4932224562950045,
+          "mAP_50": 0.8527724952948189,
+          "mAP_75": 0.5339582547222678,
+          "mAP_s": 0.5184233123647239
+        }
+      },
+      "fold7": {
+        "baseline": {
+          "AR@100": 0.5829670329670329,
+          "mAP": 0.5005746281829618,
+          "mAP_50": 0.8287396946065658,
+          "mAP_75": 0.5740455636444778,
+          "mAP_s": 0.5427194933517501
+        },
+        "delta": {
+          "AR@100": 0.008974358974358942,
+          "mAP": 0.0014148055785755398,
+          "mAP_50": 0.002717855871263608,
+          "mAP_75": 0.02550210001801334,
+          "mAP_s": 0.0038866693617408687
+        },
+        "variant": {
+          "AR@100": 0.5919413919413918,
+          "mAP": 0.5019894337615374,
+          "mAP_50": 0.8314575504778294,
+          "mAP_75": 0.5995476636624911,
+          "mAP_s": 0.5466061627134909
+        }
+      },
+      "fold8": {
+        "baseline": {
+          "AR@100": 0.5626373626373626,
+          "mAP": 0.4409724778654248,
+          "mAP_50": 0.810998694142232,
+          "mAP_75": 0.4375690967286249,
+          "mAP_s": 0.4708821430767572
+        },
+        "delta": {
+          "AR@100": 0.00366300366300365,
+          "mAP": 0.01555890575763852,
+          "mAP_50": 0.009167906617817079,
+          "mAP_75": 0.018742208313130948,
+          "mAP_s": 0.022234590678074984
+        },
+        "variant": {
+          "AR@100": 0.5663003663003663,
+          "mAP": 0.45653138362306334,
+          "mAP_50": 0.8201666007600491,
+          "mAP_75": 0.4563113050417558,
+          "mAP_s": 0.49311673375483217
+        }
+      }
+    },
+    "reported_as": "mAP +0.91 / AP75 +2.04 / APs +1.47 / AR@100 +0.91 个百分点（三折等权）",
+    "source": "两侧同一份冻结 COCOeval 参数各自复算未舍入值；Δ = 变体 − 该折自己的新 B0"
+  },
+  "frozen_implementation": {
+    "classes": {
+      "bbox_head": "SmallBkgReweightBBoxHead",
+      "roi_head": "SmallBkgReweightRoIHead"
+    },
+    "custom_imports": "custom_imports = dict(imports=['ssod.models.roi_heads.small_bkg_reweight'], allow_failed_imports=False)",
+    "inheritance_note": "推理路径继承 StandardRoIHead.simple_test，导出预测不受影响",
+    "module": "ssod/models/roi_heads/small_bkg_reweight.py",
+    "module_sha256": "cd30478c4ea8101e262696aed7cc2973c22366e4297e1ced222c2abe137ade3a",
+    "module_sha256_matches_training_receipt": true,
+    "variant_definition_equals_accepted": true,
+    "variant_definition_evidence": "2026-09-29 18:32 断言各折 reweight_l1.py 的 model.model.roi_head 字典与验收补验目录 variant_config.py 逐项相等（见 launch_record.json: variant_equivalence）"
+  },
+  "frozen_recipe": {
+    "config_delta_note": "前四项即被验收的变体定义；后两项是命名改动",
+    "config_delta_vs_b0": [
+      "custom_imports",
+      "model.model.roi_head.type",
+      "model.model.roi_head.bbox_head.type",
+      "model.model.roi_head.bbox_head.reweight",
+      "work_dir",
+      "ablation_experiment"
+    ],
+    "configs": [
+      {
+        "fold": 6,
+        "path": "ablation_configs/fold6_seed678/reweight_l1.py",
+        "sha256": "4078d2af160d9f764e8e4e5c74d4dd003a20716520cbbe28718503748dd5e090"
+      },
+      {
+        "fold": 7,
+        "path": "ablation_configs/fold7_seed678/reweight_l1.py",
+        "sha256": "802f49512555f472c736f4f55d3cff78a312daa4c58401bd68ff37506ca94974"
+      },
+      {
+        "fold": 8,
+        "path": "ablation_configs/fold8_seed678/reweight_l1.py",
+        "sha256": "9d0a6d5a65640be98319b6d41210e703dad3ef1372d3b6bc5610fc47f415659f"
+      }
+    ],
+    "lambda_": 1.0,
+    "loss_bbox": "L1Loss, loss_weight=1.0（未改）",
+    "max_area": 1024.0,
+    "max_area_note": "等于 32^2，按原图尺度面积判定小目标 ROI",
+    "no_additional_modules": "不叠加 M2 / 前景辅助头 / PG hook 等其他模块",
+    "no_lambda_search": "不继续搜索 lambda 的其他取值",
+    "target_tag": "sup2（教师2的未标注分支；不动 sup1）",
+    "training_recipe": "沿用 B0 原配方：seed 678、32000 iter、--no-validate、不加 --deterministic、每折从自己的 Phase1 / 对应 Phase2 初始化"
+  },
+  "next_stage": {
+    "constraints": [
+      "继续围绕 SSDD",
+      "不重新开启 HRSID",
+      "不增加新的验收前置条件"
+    ],
+    "independent_validation_requirement": "若要独立验证，须使用此前未参与方案选择的 SAR 图像/场景；仅换标注折或随机种子但评价同一 232 图不构成新的独立测试集",
+    "question": "下一阶段的验证投入如何定",
+    "resolution": "2026-10-01：摸底结论为「暂无条件」（本机无未参与过本项目的 SAR 图像，见 ablation_configs/data_source_survey_20261001/），独立验证记为「尚未落实可用数据，暂不开展」；本阶段结项，不再追加训练、验收或数据获取"
+  },
+  "paper_statement": {
+    "decided_at": "2026-10-01",
+    "scope_note": "仅在本轮已有证据范围内成立；不得扩写为「已验证有效」或「优于 B0」",
+    "text": "在现有 SSDD 协议下，小背景 ROI 分类重加权在三个标注折上均取得正向 mAP 增量，平均提升约 0.91 个百分点；其作用机制及独立数据上的泛化效果尚待验证。"
+  },
+  "status_of_evidence": "探索性配对实验，三折配对同向为正；不是独立验证（232 图测试集此前已参与方案选择）",
+  "step": "冻结本轮实现与配方（不追加训练、不搜索 lambda、不叠加其他模块）"
+}

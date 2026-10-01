@@ -1,0 +1,15 @@
+2026-09-29 18:25:18,983 - mmdet.ssod - INFO - [amp-backward] command: /home/xcc/anaconda3/envs/dt/bin/python tools/verify_reweight_amp_scaled_backward.py
+2026-09-29 18:25:18,988 - mmdet.ssod - INFO - [amp-backward] optimizer/EMA instrumentation: {"ema_momentum_update_seen": 1, "momentum_update_patched": true, "optimizer_step_seen": 2, "optimizer_zero_grad_seen": 1, "passed": true, "step_patched": true, "step_patched_classes": ["Optimizer", "ASGD", "Adadelta", "Adagrad", "Adam", "AdamW", "Adamax", "LBFGS", "RMSprop", "Rprop", "SGD", "SparseAdam"]}
+2026-09-29 18:25:18,988 - mmdet.ssod - INFO - [amp-backward] scaler instrumentation: {"passed": true, "scaler_step_seen": 1, "scaler_update_seen": 1, "step_patched": true, "update_patched": true}
+2026-09-29 18:25:26,850 - mmdet.ssod - INFO - [amp-backward] batch 0 tags=['sup1', 'sup2', 'unsup_student', 'unsup_teacher']
+2026-09-29 18:25:31,821 - mmdet.ssod - INFO - [amp-backward] fixed RNG snapshot a9628d57854b584c2fa444163e3d56e24faf1234417e32c47d817acab65cb3c1
+2026-09-29 18:25:31,822 - mmdet.ssod - INFO - [amp-backward] variant=lambda0
+2026-09-29 18:25:43,141 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 18:25:44,459 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 18:25:50,818 - mmdet.ssod - INFO - [amp-backward] variant=lambda0 loss=0.906550705 scaled=59411.707031 scale=65536.0 grad_tensors=246 inf=0 nan=0
+2026-09-29 18:25:50,959 - mmdet.ssod - INFO - [amp-backward] variant=lambda1
+2026-09-29 18:25:58,526 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 18:25:58,645 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 18:26:04,177 - mmdet.ssod - INFO - [amp-backward] variant=lambda1 loss=0.906554520 scaled=59411.957031 scale=65536.0 grad_tensors=246 inf=0 nan=0
+2026-09-29 18:26:04,348 - mmdet.ssod - INFO - [amp-backward] outstanding=[]
+2026-09-29 18:26:04,348 - mmdet.ssod - INFO - [amp-backward] status=AMP GradScaler backward check passed

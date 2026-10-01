@@ -1,0 +1,76 @@
+{
+  "extensions": {
+    "accepted_artifacts": {
+      "amp_scaled_backward_verdict.json": "957aa6fa23e0ec6ca8ae332769520ea17e2e225ae3aa9a73eb10533635bf75f1",
+      "harness.log": "efd731947b5bfb8320b40740ecaf462fcc83038ba98cbfe374ccb68427e4a1cf",
+      "source_receipt.json": "e47412363f6946419114474ce4bf5d9f1278f4f69f3da26f69164704e01dcf3b",
+      "variant_config.py": "71a83fc013ce0be2bad91fc1c05fee6a25f08a974918d5cf7e85cd0e5ce415cf"
+    },
+    "amp_backward_harness": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/tools/verify_reweight_amp_scaled_backward.py",
+      "sha256": "2e0141f8d2f916cb209b35a7b80f62f3bfbc5c8cf5fd894d357e26b2f1b7dec3"
+    },
+    "amp_out_dir": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/reweight_small_bkg_20260929_amp_scaled_backward",
+      "verdict_sha256": "957aa6fa23e0ec6ca8ae332769520ea17e2e225ae3aa9a73eb10533635bf75f1"
+    },
+    "new_module": "ssod.models.roi_heads.small_bkg_reweight",
+    "repeat_harness": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/tools/verify_reweight_amp_scaled_backward_repeat.py",
+      "sha256": "a99e8a7980b4c325ac2fdd9959d8e4a6480c3fff6fa641f116a07c32d64cec97"
+    },
+    "retained_harness": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/tools/verify_small_bkg_reweight.py",
+      "sha256": "792a3dac902b8227939c2529bfa1f358e0a3ef4251bbcc8cdc56f97db8049cc9"
+    },
+    "supplement_harness": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/tools/verify_reweight_supplement.py",
+      "sha256": "069a7ff2136819aacda11ca8fe15f7ea985df434cc069a59cbbd4d2fd3cf0d76"
+    }
+  },
+  "local_rank": null,
+  "rank": "0",
+  "repo_root": "/home/xcc/dual_teacher_project/DualTeacher_ablation",
+  "sources": {
+    "ssod": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/__init__.py",
+      "sha256": "84c159b9388b9c89f0c4c6cfbdee2e438f4121ac0bb306b2a74f1c80eae0f973"
+    },
+    "ssod.apis.train": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/apis/train.py",
+      "sha256": "304412ad884daa30a4b9e98d9561e562395d0971046a492109f036b030613e6f"
+    },
+    "ssod.models.dual_teacher": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/dual_teacher.py",
+      "sha256": "fcd896736e67e0b8afc347d97e9035ff91e21a9c53e3897da6938b016de8bbb9"
+    },
+    "ssod.models.progressive_gamma": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/progressive_gamma.py",
+      "sha256": "52e193e3375069c9035e447930cd08abcbf517cf1d3761854a6a4f7ecd1466c7"
+    },
+    "ssod.models.roi_heads.foreground_head": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/roi_heads/foreground_head.py",
+      "sha256": "079889f3b40aa690afc46324c40a70c3769bfe17637c7ff64d71cd2aaf8527e2"
+    },
+    "ssod.models.roi_heads.foreground_roi_head": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/roi_heads/foreground_roi_head.py",
+      "sha256": "6bc0f493fef285ac7e5e8c40066bf953c54a85faf36f23d85a328106dfb9c832"
+    },
+    "ssod.models.roi_heads.small_bkg_reweight": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/roi_heads/small_bkg_reweight.py",
+      "sha256": "cd30478c4ea8101e262696aed7cc2973c22366e4297e1ced222c2abe137ade3a"
+    },
+    "ssod.utils.checkpoint": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/utils/checkpoint.py",
+      "sha256": "9f379d52e59f29b5cb27cf8abe5cebd5ed641c31a0443db2564b6f57707fb418"
+    },
+    "ssod.utils.hooks.mean_teacher": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/utils/hooks/mean_teacher.py",
+      "sha256": "9dee62fc3a50d0a3199e7e6841a07cda214dfa9234223c48d159a5c727a3b989"
+    },
+    "ssod.utils.hooks.progressive_gamma": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/utils/hooks/progressive_gamma.py",
+      "sha256": "116eda4b08beed24dd47b8921a88ca7a25e32a8ae417b6ec3b3edd2e53426657"
+    }
+  }
+}

@@ -1,0 +1,427 @@
+{
+  "checks": {
+    "no_step_no_scaler_update_no_ema": {
+      "detail": {
+        "counter_deltas": {
+          "ema_after_train_iter": 0,
+          "ema_before_run": 0,
+          "ema_before_train_iter": 0,
+          "ema_momentum_update": 0,
+          "optimizer_step": 0,
+          "optimizer_zero_grad": 0,
+          "scaler_step": 0,
+          "scaler_update": 0
+        },
+        "gradients_finite": [
+          true,
+          true
+        ],
+        "n_changed_buffers": [
+          0,
+          0
+        ],
+        "nonfinite_loss_keys": [
+          [],
+          []
+        ],
+        "params_unchanged": [
+          true,
+          true
+        ],
+        "scaler_state_unchanged": [
+          true,
+          true
+        ]
+      },
+      "passed": true
+    },
+    "recorded_lambda0_reproduced": {
+      "detail": {
+        "accepted_lambda0_total_loss": 0.9065507054328918,
+        "pass1": {
+          "differing_prefix_counts": {
+            "student1": 104,
+            "student2": 104
+          },
+          "n_grad_tensors_differing": 208,
+          "n_grad_tensors_total": 246,
+          "n_missing_left": 0,
+          "n_missing_right": 0,
+          "top_differing": [
+            "student1.backbone.layer2.0.conv1.weight",
+            "student1.backbone.layer2.0.conv2.weight",
+            "student1.backbone.layer2.0.conv3.weight",
+            "student1.backbone.layer2.0.downsample.0.weight",
+            "student1.backbone.layer2.1.conv1.weight",
+            "student1.backbone.layer2.1.conv2.weight",
+            "student1.backbone.layer2.1.conv3.weight",
+            "student1.backbone.layer2.2.conv1.weight",
+            "student1.backbone.layer2.2.conv2.weight",
+            "student1.backbone.layer2.2.conv3.weight"
+          ]
+        },
+        "pass1_losses_equal_accepted": true,
+        "pass1_total_loss": 0.9065507054328918,
+        "pass2": {
+          "differing_prefix_counts": {
+            "student1": 104,
+            "student2": 105
+          },
+          "n_grad_tensors_differing": 209,
+          "n_grad_tensors_total": 246,
+          "n_missing_left": 0,
+          "n_missing_right": 0,
+          "top_differing": [
+            "student1.backbone.layer2.0.conv1.weight",
+            "student1.backbone.layer2.0.conv2.weight",
+            "student1.backbone.layer2.0.conv3.weight",
+            "student1.backbone.layer2.0.downsample.0.weight",
+            "student1.backbone.layer2.1.conv1.weight",
+            "student1.backbone.layer2.1.conv2.weight",
+            "student1.backbone.layer2.1.conv3.weight",
+            "student1.backbone.layer2.2.conv1.weight",
+            "student1.backbone.layer2.2.conv2.weight",
+            "student1.backbone.layer2.2.conv3.weight"
+          ]
+        }
+      },
+      "passed": false
+    },
+    "same_variant_grads_reproducible": {
+      "detail": {
+        "differing_prefix_counts": {
+          "student1": 104,
+          "student2": 105
+        },
+        "losses_identical": true,
+        "max_abs_diff": 6.103515625e-05,
+        "n_grad_tensors_differing": 209,
+        "n_grad_tensors_total": 246,
+        "pass1_scaled_loss": 59411.70703125,
+        "pass1_total_loss": 0.9065507054328918,
+        "pass2_scaled_loss": 59411.70703125,
+        "pass2_total_loss": 0.9065507054328918,
+        "top_differing": [
+          {
+            "max_abs_diff": 6.103515625e-05,
+            "name": "student1.backbone.layer2.0.downsample.0.weight"
+          },
+          {
+            "max_abs_diff": 6.103515625e-05,
+            "name": "student1.backbone.layer3.0.conv3.weight"
+          },
+          {
+            "max_abs_diff": 3.0517578125e-05,
+            "name": "student1.backbone.layer2.1.conv3.weight"
+          },
+          {
+            "max_abs_diff": 3.0517578125e-05,
+            "name": "student1.backbone.layer2.3.conv3.weight"
+          },
+          {
+            "max_abs_diff": 3.0517578125e-05,
+            "name": "student1.backbone.layer3.0.conv2.weight"
+          },
+          {
+            "max_abs_diff": 3.0517578125e-05,
+            "name": "student1.backbone.layer3.0.downsample.0.weight"
+          },
+          {
+            "max_abs_diff": 3.0517578125e-05,
+            "name": "student1.backbone.layer3.6.conv3.weight"
+          },
+          {
+            "max_abs_diff": 2.288818359375e-05,
+            "name": "student1.backbone.layer3.4.conv3.weight"
+          },
+          {
+            "max_abs_diff": 1.71661376953125e-05,
+            "name": "student1.backbone.layer2.0.conv3.weight"
+          },
+          {
+            "max_abs_diff": 1.71661376953125e-05,
+            "name": "student1.backbone.layer3.10.conv1.weight"
+          }
+        ]
+      },
+      "passed": false
+    }
+  },
+  "elapsed_seconds": 42.1129674911499,
+  "instrumentation": {
+    "optimizer_ema": {
+      "ema_momentum_update_seen": 1,
+      "momentum_update_patched": true,
+      "optimizer_step_seen": 2,
+      "optimizer_zero_grad_seen": 1,
+      "passed": true,
+      "step_patched": true,
+      "step_patched_classes": [
+        "Optimizer",
+        "ASGD",
+        "Adadelta",
+        "Adagrad",
+        "Adam",
+        "AdamW",
+        "Adamax",
+        "LBFGS",
+        "RMSprop",
+        "Rprop",
+        "SGD",
+        "SparseAdam"
+      ]
+    },
+    "scaler": {
+      "passed": true,
+      "scaler_step_seen": 1,
+      "scaler_update_seen": 1,
+      "step_patched": true,
+      "update_patched": true
+    }
+  },
+  "interpretation": "AMP same-variant backward is NOT bitwise reproducible in this environment: two lambda0 passes with the same batch, snapshot and scaler state differ on 209/246 gradient tensors.  The accepted run's per-tensor lambda0-vs-lambda1 gradient comparison is therefore not attributable; only its loss-level attribution (the single changed key sup2_loss_cls, magnitude matching the weighting formula) stands.",
+  "not_an_effect_claim": "reproducibility and attribution of an implementation, not evidence of any accuracy gain",
+  "outstanding": [
+    "same_variant_grads_reproducible",
+    "recorded_lambda0_reproduced"
+  ],
+  "overall_status": "outstanding: ['same_variant_grads_reproducible', 'recorded_lambda0_reproduced']",
+  "question": "is the accepted run's per-tensor lambda0-vs-lambda1 gradient difference attributable to the reweight, or to a non-reproducible AMP backward?",
+  "recorded_lambda0": {
+    "pass1": {
+      "differing_prefix_counts": {
+        "student1": 104,
+        "student2": 104
+      },
+      "n_grad_tensors_differing": 208,
+      "n_grad_tensors_total": 246,
+      "n_missing_left": 0,
+      "n_missing_right": 0,
+      "top_differing": [
+        "student1.backbone.layer2.0.conv1.weight",
+        "student1.backbone.layer2.0.conv2.weight",
+        "student1.backbone.layer2.0.conv3.weight",
+        "student1.backbone.layer2.0.downsample.0.weight",
+        "student1.backbone.layer2.1.conv1.weight",
+        "student1.backbone.layer2.1.conv2.weight",
+        "student1.backbone.layer2.1.conv3.weight",
+        "student1.backbone.layer2.2.conv1.weight",
+        "student1.backbone.layer2.2.conv2.weight",
+        "student1.backbone.layer2.2.conv3.weight"
+      ]
+    },
+    "pass2": {
+      "differing_prefix_counts": {
+        "student1": 104,
+        "student2": 105
+      },
+      "n_grad_tensors_differing": 209,
+      "n_grad_tensors_total": 246,
+      "n_missing_left": 0,
+      "n_missing_right": 0,
+      "top_differing": [
+        "student1.backbone.layer2.0.conv1.weight",
+        "student1.backbone.layer2.0.conv2.weight",
+        "student1.backbone.layer2.0.conv3.weight",
+        "student1.backbone.layer2.0.downsample.0.weight",
+        "student1.backbone.layer2.1.conv1.weight",
+        "student1.backbone.layer2.1.conv2.weight",
+        "student1.backbone.layer2.1.conv3.weight",
+        "student1.backbone.layer2.2.conv1.weight",
+        "student1.backbone.layer2.2.conv2.weight",
+        "student1.backbone.layer2.2.conv3.weight"
+      ]
+    }
+  },
+  "recorded_lambda1_changed_loss_keys": [
+    "sup2_loss_cls"
+  ],
+  "recorded_lambda1_vs_lambda0": {
+    "differing_prefix_counts": {
+      "student1": 104,
+      "student2": 111
+    },
+    "n_grad_tensors_differing": 215,
+    "n_grad_tensors_total": 246,
+    "n_missing_left": 0,
+    "n_missing_right": 0,
+    "top_differing": [
+      "student1.backbone.layer2.0.conv1.weight",
+      "student1.backbone.layer2.0.conv2.weight",
+      "student1.backbone.layer2.0.conv3.weight",
+      "student1.backbone.layer2.0.downsample.0.weight",
+      "student1.backbone.layer2.1.conv1.weight",
+      "student1.backbone.layer2.1.conv2.weight",
+      "student1.backbone.layer2.1.conv3.weight",
+      "student1.backbone.layer2.2.conv1.weight",
+      "student1.backbone.layer2.2.conv2.weight",
+      "student1.backbone.layer2.2.conv3.weight"
+    ]
+  },
+  "recorded_losses_equal_between_lambda0_and_lambda1": false,
+  "same_variant_pass1_vs_pass2": {
+    "losses_identical": true,
+    "max_abs_diff": 6.103515625e-05,
+    "n_grad_tensors_differing": 209,
+    "n_grad_tensors_total": 246,
+    "reproducible": false,
+    "scaled_loss_identical": true,
+    "top": 6.103515625e-05,
+    "top_differing": [
+      {
+        "max_abs_diff": 6.103515625e-05,
+        "name": "student1.backbone.layer2.0.downsample.0.weight"
+      },
+      {
+        "max_abs_diff": 6.103515625e-05,
+        "name": "student1.backbone.layer3.0.conv3.weight"
+      },
+      {
+        "max_abs_diff": 3.0517578125e-05,
+        "name": "student1.backbone.layer2.1.conv3.weight"
+      },
+      {
+        "max_abs_diff": 3.0517578125e-05,
+        "name": "student1.backbone.layer2.3.conv3.weight"
+      },
+      {
+        "max_abs_diff": 3.0517578125e-05,
+        "name": "student1.backbone.layer3.0.conv2.weight"
+      },
+      {
+        "max_abs_diff": 3.0517578125e-05,
+        "name": "student1.backbone.layer3.0.downsample.0.weight"
+      },
+      {
+        "max_abs_diff": 3.0517578125e-05,
+        "name": "student1.backbone.layer3.6.conv3.weight"
+      },
+      {
+        "max_abs_diff": 2.288818359375e-05,
+        "name": "student1.backbone.layer3.4.conv3.weight"
+      },
+      {
+        "max_abs_diff": 1.71661376953125e-05,
+        "name": "student1.backbone.layer2.0.conv3.weight"
+      },
+      {
+        "max_abs_diff": 1.71661376953125e-05,
+        "name": "student1.backbone.layer3.10.conv1.weight"
+      }
+    ],
+    "total_loss_identical": true
+  },
+  "scope": "does not re-run the accepted AMP scaled-backward checks, A1-A6 or the supplement; changes no loss, optimizer, scaler or EMA state",
+  "setup": {
+    "batch_index": 0,
+    "batch_tags": [
+      "sup1",
+      "sup2",
+      "unsup_student",
+      "unsup_teacher"
+    ],
+    "lambda0_matches_accepted_definition": true,
+    "lambda0_roi_head": {
+      "bbox_head": {
+        "bbox_coder": {
+          "target_means": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "target_stds": [
+            0.1,
+            0.1,
+            0.2,
+            0.2
+          ],
+          "type": "DeltaXYWHBBoxCoder"
+        },
+        "fc_out_channels": 1024,
+        "in_channels": 256,
+        "loss_bbox": {
+          "loss_weight": 1.0,
+          "type": "L1Loss"
+        },
+        "loss_cls": {
+          "loss_weight": 1.0,
+          "type": "CrossEntropyLoss",
+          "use_sigmoid": false
+        },
+        "num_classes": 1,
+        "reg_class_agnostic": false,
+        "reweight": {
+          "enable": true,
+          "lambda_": 0.0,
+          "max_area": 1024.0,
+          "tag": "sup2"
+        },
+        "roi_feat_size": 7,
+        "type": "SmallBkgReweightBBoxHead"
+      },
+      "bbox_roi_extractor": {
+        "featmap_strides": [
+          4,
+          8,
+          16,
+          32
+        ],
+        "out_channels": 256,
+        "roi_layer": {
+          "output_size": 7,
+          "sampling_ratio": 0,
+          "type": "RoIAlign"
+        },
+        "type": "SingleRoIExtractor"
+      },
+      "pretrained": null,
+      "test_cfg": {
+        "max_per_img": 100,
+        "nms": {
+          "iou_threshold": 0.5,
+          "type": "nms"
+        },
+        "score_thr": 0.05
+      },
+      "train_cfg": {
+        "assigner": {
+          "ignore_iof_thr": -1,
+          "match_low_quality": false,
+          "min_pos_iou": 0.5,
+          "neg_iou_thr": 0.5,
+          "pos_iou_thr": 0.5,
+          "type": "MaxIoUAssigner"
+        },
+        "debug": false,
+        "pos_weight": -1,
+        "sampler": {
+          "add_gt_as_proposals": true,
+          "neg_pos_ub": -1,
+          "num": 512,
+          "pos_fraction": 0.25,
+          "type": "RandomSampler"
+        }
+      },
+      "type": "SmallBkgReweightRoIHead"
+    },
+    "pass_labels": [
+      "lambda0_pass1",
+      "lambda0_pass2"
+    ],
+    "scaler_state": {
+      "_growth_tracker": 0,
+      "backoff_factor": 0.5,
+      "growth_factor": 2.0,
+      "growth_interval": 2000,
+      "scale": 65536.0
+    },
+    "scaler_state_matches_accepted": true,
+    "snapshot_fingerprint": "a9628d57854b584c2fa444163e3d56e24faf1234417e32c47d817acab65cb3c1",
+    "snapshot_reproduces_accepted": true
+  },
+  "student1_observation": {
+    "detail": "the same-variant repeat shows the same student1.* spread, so the student1.* entries in the lambda0-vs-lambda1 difference carry no signal about the reweight",
+    "status": "explained_as_backward_nondeterminism"
+  }
+}

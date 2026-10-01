@@ -1,0 +1,13 @@
+[evalchain] 2026-09-30 21:23:38 strict eval chain started (pid 455154, script sha256 8559c9174f4d0954874e9542f6e9639986217fabdc470d6d3aa5a70e38e30716)
+[evalchain] 2026-09-30 21:23:46 fold6 checkpoint sha256=20d87d4d39b731528d2b69a19e97bff010b51b6a3df0103ee232a798b3009c57
+[evalchain] 2026-09-30 21:23:46 fold6 launching: /home/xcc/anaconda3/envs/dt/bin/python tools/train_ablation.py ablation_configs/fold6_seed678/reweight_l1.py /home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold6_seed678/reweight_l1/iter_32000.pth --eval --fold 6 --out-dir ablation_configs/fold6_seed678/reweight_l1_evaluation
+[evalchain] 2026-09-30 21:24:24 fold6 exit=0
+[evalchain] 2026-09-30 21:24:32 fold7 checkpoint sha256=0e4c25de34af80c2deea86e16a8bdb5d95c6c06a40e8f85d60556076744cfaf8
+[evalchain] 2026-09-30 21:24:32 fold7 launching: /home/xcc/anaconda3/envs/dt/bin/python tools/train_ablation.py ablation_configs/fold7_seed678/reweight_l1.py /home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold7_seed678/reweight_l1/iter_32000.pth --eval --fold 7 --out-dir ablation_configs/fold7_seed678/reweight_l1_evaluation
+[evalchain] 2026-09-30 21:25:09 fold7 exit=0
+[evalchain] 2026-09-30 21:25:17 fold8 checkpoint sha256=bffb33ac34623a9f7cf441c73965dc9863f2f38d6b675b0f6f99c638fbca939e
+[evalchain] 2026-09-30 21:25:17 fold8 launching: /home/xcc/anaconda3/envs/dt/bin/python tools/train_ablation.py ablation_configs/fold8_seed678/reweight_l1.py /home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold8_seed678/reweight_l1/iter_32000.pth --eval --fold 8 --out-dir ablation_configs/fold8_seed678/reweight_l1_evaluation
+[evalchain] 2026-09-30 21:25:56 fold8 exit=0
+[evalchain] 2026-09-30 21:25:56 all three evaluations finished; computing paired delta
+[evalchain] 2026-09-30 21:26:47 paired delta recompute exit=0
+[evalchain] 2026-09-30 21:26:47 strict eval chain finished (all steps passed)

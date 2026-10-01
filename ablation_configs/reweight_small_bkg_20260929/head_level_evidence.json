@@ -1,0 +1,61 @@
+{
+  "acc_equal_lambda1": true,
+  "avg_factor": {
+    "b0": 512.0,
+    "lambda0": 512.0,
+    "lambda1": 512.0
+  },
+  "capture_from": "fp32|b0",
+  "changed_keys_lambda0_vs_b0": [],
+  "changed_keys_lambda1_vs_b0": [
+    "loss_cls"
+  ],
+  "cls_increased_lambda1": true,
+  "cls_ratio_lambda1_over_b0": 1.00216779488614,
+  "denominators_equal": true,
+  "factors_seen": {
+    "lambda0": [
+      1.0
+    ],
+    "lambda1": [
+      1.0,
+      2.0
+    ]
+  },
+  "loss_bitwise_equal_lambda0": true,
+  "losses": {
+    "b0": {
+      "acc": 99.609375,
+      "loss_bbox": 0.023277876898646355,
+      "loss_cls": 0.008842816576361656
+    },
+    "lambda0": {
+      "acc": 99.609375,
+      "loss_bbox": 0.023277876898646355,
+      "loss_cls": 0.008842816576361656
+    },
+    "lambda1": {
+      "acc": 99.609375,
+      "loss_bbox": 0.023277876898646355,
+      "loss_cls": 0.008861985988914967
+    }
+  },
+  "n_images": 1,
+  "only_cls_changed_lambda1": true,
+  "passed_lambda0": true,
+  "passed_lambda1": true,
+  "scale_factors": [
+    [
+      2.6291913986206055,
+      2.6306307315826416,
+      2.6291913986206055,
+      2.6306307315826416
+    ]
+  ],
+  "tags": [
+    "sup2"
+  ],
+  "target_max_abs_diff_lambda0_vs_b0": 0.0,
+  "target_max_abs_diff_lambda1_vs_b0": 1.0,
+  "targets_bitwise_equal_lambda0": true
+}

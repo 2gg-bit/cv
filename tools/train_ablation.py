@@ -20,6 +20,7 @@ SOURCE_MODULES = {
     "ssod.models.progressive_gamma": "ssod/models/progressive_gamma.py",
     "ssod.models.roi_heads.foreground_head": "ssod/models/roi_heads/foreground_head.py",
     "ssod.models.roi_heads.foreground_roi_head": "ssod/models/roi_heads/foreground_roi_head.py",
+    "ssod.models.roi_heads.small_bkg_reweight": "ssod/models/roi_heads/small_bkg_reweight.py",
     "ssod.utils.checkpoint": "ssod/utils/checkpoint.py",
     "ssod.utils.hooks.mean_teacher": "ssod/utils/hooks/mean_teacher.py",
     "ssod.utils.hooks.progressive_gamma": "ssod/utils/hooks/progressive_gamma.py",

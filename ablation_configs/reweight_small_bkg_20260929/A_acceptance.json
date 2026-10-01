@@ -1,0 +1,455 @@
+{
+  "batch_index": 0,
+  "batch_tags": [
+    "sup1",
+    "sup2",
+    "unsup_student",
+    "unsup_teacher"
+  ],
+  "checkpoint": {
+    "path": "/home/xcc/dual_teacher_project/DualTeacher/work_dirs/ablation_v1/fold6_seed678/b0/iter_32000.pth",
+    "sha256": "8a43beb47f6e172a04e7a3a275a8d854b88166c3bd098e4299dd604fd12fb7ba"
+  },
+  "checks": {
+    "A1": {
+      "detail": {
+        "fp32": {
+          "all_background_by_gt_iou": true,
+          "all_background_by_label": true,
+          "images_with_reweighted": 1,
+          "max_iou_among_reweighted": 0.018571867609987684,
+          "n_reweighted_total": 74,
+          "passed": true
+        },
+        "train": {
+          "all_background_by_gt_iou": true,
+          "all_background_by_label": true,
+          "images_with_reweighted": 1,
+          "max_iou_among_reweighted": 0.0,
+          "n_reweighted_total": 83,
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    "A2": {
+      "detail": {
+        "fp32": {
+          "factor_value_sets": [
+            [
+              1.0,
+              2.0
+            ]
+          ],
+          "issues": [],
+          "n_checked": 1,
+          "passed": true
+        },
+        "train": {
+          "factor_value_sets": [
+            [
+              1.0,
+              2.0
+            ]
+          ],
+          "issues": [],
+          "n_checked": 1,
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    "A3": {
+      "detail": {
+        "fp32": {
+          "changed_keys_above_noise": [],
+          "changed_keys_other_than_cls_above_noise": [],
+          "effect_resolvable_end_to_end": false,
+          "noise_floor": 0.5859375,
+          "passed": true,
+          "sup2_loss_cls_increased": false,
+          "sup2_loss_cls_lambda0": 0.00192825251724571,
+          "sup2_loss_cls_lambda1": 0.0016199470264837146,
+          "total_loss_delta": 0.216729998588562,
+          "total_loss_lambda0": 0.7090754508972168,
+          "total_loss_lambda1": 0.9258054494857788
+        },
+        "train": {
+          "changed_keys_above_noise": [],
+          "changed_keys_other_than_cls_above_noise": [],
+          "effect_resolvable_end_to_end": false,
+          "noise_floor": 0.1953125,
+          "passed": true,
+          "sup2_loss_cls_increased": true,
+          "sup2_loss_cls_lambda0": 0.001725197653286159,
+          "sup2_loss_cls_lambda1": 0.0022381122689694166,
+          "total_loss_delta": 0.20307087898254395,
+          "total_loss_lambda0": 0.9046737551689148,
+          "total_loss_lambda1": 0.7016028761863708
+        }
+      },
+      "end_to_end_note": "the end-to-end loss table cannot resolve this effect on this batch: two runs of the same variant already differ in every cls-type loss, so the positive form of A3 ('only sup2_loss_cls changed, denominator held') is established at head level instead; end to end only the negative form holds (no other key moves beyond the same-variant noise floor)",
+      "end_to_end_passed": true,
+      "head_level": {
+        "acc_equal_lambda1": true,
+        "avg_factor": {
+          "b0": 512.0,
+          "lambda0": 512.0,
+          "lambda1": 512.0
+        },
+        "capture_from": "fp32|b0",
+        "changed_keys_lambda0_vs_b0": [],
+        "changed_keys_lambda1_vs_b0": [
+          "loss_cls"
+        ],
+        "cls_increased_lambda1": true,
+        "cls_ratio_lambda1_over_b0": 1.00216779488614,
+        "denominators_equal": true,
+        "factors_seen": {
+          "lambda0": [
+            1.0
+          ],
+          "lambda1": [
+            1.0,
+            2.0
+          ]
+        },
+        "loss_bitwise_equal_lambda0": true,
+        "losses": {
+          "b0": {
+            "acc": 99.609375,
+            "loss_bbox": 0.023277876898646355,
+            "loss_cls": 0.008842816576361656
+          },
+          "lambda0": {
+            "acc": 99.609375,
+            "loss_bbox": 0.023277876898646355,
+            "loss_cls": 0.008842816576361656
+          },
+          "lambda1": {
+            "acc": 99.609375,
+            "loss_bbox": 0.023277876898646355,
+            "loss_cls": 0.008861985988914967
+          }
+        },
+        "n_images": 1,
+        "only_cls_changed_lambda1": true,
+        "passed_lambda0": true,
+        "passed_lambda1": true,
+        "scale_factors": [
+          [
+            2.6291913986206055,
+            2.6306307315826416,
+            2.6291913986206055,
+            2.6306307315826416
+          ]
+        ],
+        "tags": [
+          "sup2"
+        ],
+        "target_max_abs_diff_lambda0_vs_b0": 0.0,
+        "target_max_abs_diff_lambda1_vs_b0": 1.0,
+        "targets_bitwise_equal_lambda0": true
+      },
+      "passed": true
+    },
+    "A4": {
+      "detail": {
+        "fp32": {
+          "by_tag": {
+            "student1|sup1": {
+              "branch": "student1",
+              "images": 1,
+              "n_neg": 467,
+              "n_reweighted": 0,
+              "tag": "sup1"
+            },
+            "student1|unsup_student": {
+              "branch": "student1",
+              "images": 1,
+              "n_neg": 473,
+              "n_reweighted": 0,
+              "tag": "unsup_student"
+            },
+            "student2|sup2": {
+              "branch": "student2",
+              "images": 1,
+              "n_neg": 484,
+              "n_reweighted": 74,
+              "tag": "sup2"
+            },
+            "student2|unsup_student": {
+              "branch": "student2",
+              "images": 1,
+              "n_neg": 479,
+              "n_reweighted": 0,
+              "tag": "unsup_student"
+            }
+          },
+          "gated_images": 3,
+          "gated_reweighted": 0,
+          "passed": true
+        },
+        "train": {
+          "by_tag": {
+            "student1|sup1": {
+              "branch": "student1",
+              "images": 1,
+              "n_neg": 467,
+              "n_reweighted": 0,
+              "tag": "sup1"
+            },
+            "student1|unsup_student": {
+              "branch": "student1",
+              "images": 1,
+              "n_neg": 489,
+              "n_reweighted": 0,
+              "tag": "unsup_student"
+            },
+            "student2|sup2": {
+              "branch": "student2",
+              "images": 1,
+              "n_neg": 484,
+              "n_reweighted": 83,
+              "tag": "sup2"
+            },
+            "student2|unsup_student": {
+              "branch": "student2",
+              "images": 1,
+              "n_neg": 494,
+              "n_reweighted": 0,
+              "tag": "unsup_student"
+            }
+          },
+          "gated_images": 3,
+          "gated_reweighted": 0,
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    "A5": {
+      "detail": {
+        "fp32": {
+          "bitwise_equal": false,
+          "max_abs_diff": 0.5859375,
+          "noise_floor": 0.5859375,
+          "passed": true,
+          "total_loss_bitwise_equal": false,
+          "total_loss_delta": 0.004274964332580566
+        },
+        "train": {
+          "bitwise_equal": false,
+          "max_abs_diff": 0.007234729826450348,
+          "noise_floor": 0.1953125,
+          "passed": true,
+          "total_loss_bitwise_equal": false,
+          "total_loss_delta": 0.007950961589813232
+        }
+      },
+      "end_to_end_passed": true,
+      "head_level": {
+        "acc_equal_lambda1": true,
+        "avg_factor": {
+          "b0": 512.0,
+          "lambda0": 512.0,
+          "lambda1": 512.0
+        },
+        "capture_from": "fp32|b0",
+        "changed_keys_lambda0_vs_b0": [],
+        "changed_keys_lambda1_vs_b0": [
+          "loss_cls"
+        ],
+        "cls_increased_lambda1": true,
+        "cls_ratio_lambda1_over_b0": 1.00216779488614,
+        "denominators_equal": true,
+        "factors_seen": {
+          "lambda0": [
+            1.0
+          ],
+          "lambda1": [
+            1.0,
+            2.0
+          ]
+        },
+        "loss_bitwise_equal_lambda0": true,
+        "losses": {
+          "b0": {
+            "acc": 99.609375,
+            "loss_bbox": 0.023277876898646355,
+            "loss_cls": 0.008842816576361656
+          },
+          "lambda0": {
+            "acc": 99.609375,
+            "loss_bbox": 0.023277876898646355,
+            "loss_cls": 0.008842816576361656
+          },
+          "lambda1": {
+            "acc": 99.609375,
+            "loss_bbox": 0.023277876898646355,
+            "loss_cls": 0.008861985988914967
+          }
+        },
+        "n_images": 1,
+        "only_cls_changed_lambda1": true,
+        "passed_lambda0": true,
+        "passed_lambda1": true,
+        "scale_factors": [
+          [
+            2.6291913986206055,
+            2.6306307315826416,
+            2.6291913986206055,
+            2.6306307315826416
+          ]
+        ],
+        "tags": [
+          "sup2"
+        ],
+        "target_max_abs_diff_lambda0_vs_b0": 0.0,
+        "target_max_abs_diff_lambda1_vs_b0": 1.0,
+        "targets_bitwise_equal_lambda0": true
+      },
+      "passed": true
+    },
+    "A6": {
+      "detail": {
+        "fp32": {
+          "b0_checkpoint_loaded_strict": true,
+          "n_keys_b0": 2616,
+          "n_keys_lambda1": 2616,
+          "n_params_b0": 241361236,
+          "n_params_lambda1": 241361236,
+          "n_trainable_b0": 120025130,
+          "n_trainable_lambda1": 120025130,
+          "passed": true,
+          "state_dict_keys_equal": true
+        },
+        "train": {
+          "b0_checkpoint_loaded_strict": true,
+          "n_keys_b0": 2616,
+          "n_keys_lambda1": 2616,
+          "n_params_b0": 241361236,
+          "n_params_lambda1": 241361236,
+          "n_trainable_b0": 120025130,
+          "n_trainable_lambda1": 120025130,
+          "passed": true,
+          "state_dict_keys_equal": true
+        }
+      },
+      "passed": true
+    }
+  },
+  "command": "/home/xcc/anaconda3/envs/dt/bin/python tools/verify_small_bkg_reweight.py --config ablation_configs/fold6_seed678/b0.py --checkpoint work_dirs/ablation_v1/fold6_seed678/b0/iter_32000.pth --out-dir ablation_configs/reweight_small_bkg_20260929 --passes train,fp32 --scan-limit 30",
+  "config": {
+    "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/fold6_seed678/b0.py",
+    "sha256": "5e2f45559e91e462184a54c0646eb1b3e067c1838121904decf7a7260b9f7d5b"
+  },
+  "cuda": "11.0",
+  "cwd": "/home/xcc/dual_teacher_project/DualTeacher_ablation",
+  "elapsed_seconds": 120.41688871383667,
+  "emitted_variant_config": {
+    "config_diff_paths": [
+      "custom_imports",
+      "model.model.roi_head.bbox_head.reweight",
+      "model.model.roi_head.bbox_head.type",
+      "model.model.roi_head.type"
+    ],
+    "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ablation_configs/reweight_small_bkg_20260929/variant_config.py",
+    "sha256": "71a83fc013ce0be2bad91fc1c05fee6a25f08a974918d5cf7e85cd0e5ce415cf"
+  },
+  "guardrails": {
+    "all_parameters_bitwise_unchanged": true,
+    "buffers_changed": [
+      {
+        "n_changed": 0,
+        "pass_name": "train",
+        "variant": "b0"
+      },
+      {
+        "n_changed": 0,
+        "pass_name": "train",
+        "variant": "b0_repeat"
+      },
+      {
+        "n_changed": 0,
+        "pass_name": "train",
+        "variant": "lambda0"
+      },
+      {
+        "n_changed": 0,
+        "pass_name": "train",
+        "variant": "lambda1"
+      },
+      {
+        "n_changed": 0,
+        "pass_name": "fp32",
+        "variant": "b0"
+      },
+      {
+        "n_changed": 0,
+        "pass_name": "fp32",
+        "variant": "b0_repeat"
+      },
+      {
+        "n_changed": 0,
+        "pass_name": "fp32",
+        "variant": "lambda0"
+      },
+      {
+        "n_changed": 0,
+        "pass_name": "fp32",
+        "variant": "lambda1"
+      }
+    ],
+    "ema_after_train_iter_calls": 0,
+    "ema_before_run_calls": 0,
+    "ema_before_train_iter_calls": 0,
+    "ema_momentum_update_calls": 0,
+    "instrumentation": {
+      "ema_momentum_update_seen": 1,
+      "momentum_update_patched": true,
+      "optimizer_step_seen": 2,
+      "optimizer_zero_grad_seen": 1,
+      "passed": true,
+      "step_patched": true,
+      "step_patched_classes": [
+        "Optimizer",
+        "ASGD",
+        "Adadelta",
+        "Adagrad",
+        "Adam",
+        "AdamW",
+        "Adamax",
+        "LBFGS",
+        "RMSprop",
+        "Rprop",
+        "SGD",
+        "SparseAdam"
+      ]
+    },
+    "no_backward": true,
+    "no_optimizer_or_ema_update": true,
+    "optimizer_step_calls": 0,
+    "optimizer_zero_grad_calls": 0,
+    "runs_with_gradients": [],
+    "runs_with_parameters_unchanged": [
+      "train|b0",
+      "train|b0_repeat",
+      "train|lambda0",
+      "train|lambda1",
+      "fp32|b0",
+      "fp32|b0_repeat",
+      "fp32|lambda0",
+      "fp32|lambda1"
+    ]
+  },
+  "precision_passes": [
+    "train",
+    "fp32"
+  ],
+  "python": "3.8.20",
+  "seed": 678,
+  "status": "passed",
+  "sup2_image_index": 1,
+  "torch": "1.7.0+cu110"
+}

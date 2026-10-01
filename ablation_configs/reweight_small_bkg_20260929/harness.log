@@ -1,0 +1,44 @@
+2026-09-29 15:03:17,052 - mmdet.ssod - INFO - [acceptance] command: /home/xcc/anaconda3/envs/dt/bin/python tools/verify_small_bkg_reweight.py --config ablation_configs/fold6_seed678/b0.py --checkpoint work_dirs/ablation_v1/fold6_seed678/b0/iter_32000.pth --out-dir ablation_configs/reweight_small_bkg_20260929 --passes train,fp32 --scan-limit 30
+2026-09-29 15:03:17,055 - mmdet.ssod - INFO - [acceptance] source receipt written (10 modules, new module registered: True)
+2026-09-29 15:03:17,058 - mmdet.ssod - INFO - [acceptance] instrumentation self-test: {"ema_momentum_update_seen": 1, "momentum_update_patched": true, "optimizer_step_seen": 2, "optimizer_zero_grad_seen": 1, "passed": true, "step_patched": true, "step_patched_classes": ["Optimizer", "ASGD", "Adadelta", "Adagrad", "Adam", "AdamW", "Adamax", "LBFGS", "RMSprop", "Rprop", "SGD", "SparseAdam"]}
+2026-09-29 15:03:25,139 - mmdet.ssod - INFO - [acceptance] batch 0 tags=['sup1', 'sup2', 'unsup_student', 'unsup_teacher']
+2026-09-29 15:03:25,139 - mmdet.ssod - INFO - [acceptance] pass=train variant=b0 ...
+2026-09-29 15:03:36,646 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=499.00
+2026-09-29 15:03:38,056 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=492.76
+2026-09-29 15:03:42,394 - mmdet.ssod - INFO - [acceptance] pass=train variant=b0 done in 6.6s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:03:42,395 - mmdet.ssod - INFO - [acceptance] pass=train variant=b0_repeat ...
+2026-09-29 15:03:50,246 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=496.16
+2026-09-29 15:03:50,368 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=499.79
+2026-09-29 15:03:53,751 - mmdet.ssod - INFO - [acceptance] pass=train variant=b0_repeat done in 0.6s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:03:53,752 - mmdet.ssod - INFO - [acceptance] pass=train variant=lambda0 ...
+2026-09-29 15:04:01,269 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=496.24
+2026-09-29 15:04:01,401 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=494.25
+2026-09-29 15:04:04,872 - mmdet.ssod - INFO - [acceptance] pass=train variant=lambda0 done in 0.6s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:04:04,873 - mmdet.ssod - INFO - [acceptance] pass=train variant=lambda1 ...
+2026-09-29 15:04:12,599 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=495.68
+2026-09-29 15:04:12,726 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=494.73
+2026-09-29 15:04:16,020 - mmdet.ssod - INFO - [acceptance] pass=train variant=lambda1 done in 0.6s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:04:16,021 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=b0 ...
+2026-09-29 15:04:23,738 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.87
+2026-09-29 15:04:23,937 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.43
+2026-09-29 15:04:27,286 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=b0 done in 1.1s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:04:27,286 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=b0_repeat ...
+2026-09-29 15:04:34,972 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=499.52
+2026-09-29 15:04:35,159 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=498.42
+2026-09-29 15:04:38,540 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=b0_repeat done in 1.0s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:04:38,541 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=lambda0 ...
+2026-09-29 15:04:46,567 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=498.24
+2026-09-29 15:04:46,765 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=499.85
+2026-09-29 15:04:50,137 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=lambda0 done in 1.1s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:04:50,138 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=lambda1 ...
+2026-09-29 15:04:57,870 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=496.30
+2026-09-29 15:04:58,064 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=495.71
+2026-09-29 15:05:01,531 - mmdet.ssod - INFO - [acceptance] pass=fp32 variant=lambda1 done in 1.1s counters={"ema_after_train_iter": 0, "ema_before_run": 0, "ema_before_train_iter": 0, "ema_momentum_update": 0, "optimizer_step": 0, "optimizer_zero_grad": 0}
+2026-09-29 15:05:12,500 - mmdet.ssod - INFO - [acceptance] head level (lambda0 vs b0 bitwise: True, lambda1 changed=['loss_cls'], cls 0.00884282 -> 0.00886199, avg_factor {'b0': 512.0, 'lambda0': 512.0, 'lambda1': 512.0})
+2026-09-29 15:05:17,473 - mmdet.ssod - INFO - [acceptance] status=passed
+2026-09-29 15:05:17,474 - mmdet.ssod - INFO - [acceptance] A1: PASS
+2026-09-29 15:05:17,474 - mmdet.ssod - INFO - [acceptance] A2: PASS
+2026-09-29 15:05:17,474 - mmdet.ssod - INFO - [acceptance] A3: PASS
+2026-09-29 15:05:17,474 - mmdet.ssod - INFO - [acceptance] A4: PASS
+2026-09-29 15:05:17,474 - mmdet.ssod - INFO - [acceptance] A5: PASS
+2026-09-29 15:05:17,474 - mmdet.ssod - INFO - [acceptance] A6: PASS

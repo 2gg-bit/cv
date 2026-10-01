@@ -1,0 +1,12 @@
+2026-09-29 18:29:24,738 - mmdet.ssod - INFO - [amp-repeat] command: /home/xcc/anaconda3/envs/dt/bin/python tools/verify_reweight_amp_scaled_backward_repeat.py
+2026-09-29 18:29:24,745 - mmdet.ssod - INFO - [amp-repeat] optimizer/EMA instrumentation: {"ema_momentum_update_seen": 1, "momentum_update_patched": true, "optimizer_step_seen": 2, "optimizer_zero_grad_seen": 1, "passed": true, "step_patched": true, "step_patched_classes": ["Optimizer", "ASGD", "Adadelta", "Adagrad", "Adam", "AdamW", "Adamax", "LBFGS", "RMSprop", "Rprop", "SGD", "SparseAdam"]}
+2026-09-29 18:29:24,745 - mmdet.ssod - INFO - [amp-repeat] scaler instrumentation: {"passed": true, "scaler_step_seen": 1, "scaler_update_seen": 1, "step_patched": true, "update_patched": true}
+2026-09-29 18:29:34,594 - mmdet.ssod - INFO - [amp-repeat] batch 0 tags=['sup1', 'sup2', 'unsup_student', 'unsup_teacher'] snapshot a9628d57854b584c2fa444163e3d56e24faf1234417e32c47d817acab65cb3c1 reproduced=True
+2026-09-29 18:29:45,884 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 18:29:47,248 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 18:29:53,741 - mmdet.ssod - INFO - [amp-repeat] lambda0_pass1 total_loss=0.9065507054328918 scaled=59411.70703125 digest=a9628d57854b584c2fa444163e3d56e24faf1234417e32c47d817acab65cb3c1
+2026-09-29 18:30:01,319 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 18:30:01,437 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 18:30:06,835 - mmdet.ssod - INFO - [amp-repeat] lambda0_pass2 total_loss=0.9065507054328918 scaled=59411.70703125 digest=a9628d57854b584c2fa444163e3d56e24faf1234417e32c47d817acab65cb3c1
+2026-09-29 18:30:06,852 - mmdet.ssod - INFO - [amp-repeat] outstanding=['same_variant_grads_reproducible', 'recorded_lambda0_reproduced']
+2026-09-29 18:30:06,852 - mmdet.ssod - INFO - [amp-repeat] AMP same-variant backward is NOT bitwise reproducible in this environment: two lambda0 passes with the same batch, snapshot and scaler state differ on 209/246 gradient tensors.  The accepted run's per-tensor lambda0-vs-lambda1 gradient comparison is therefore not attributable; only its loss-level attribution (the single changed key sup2_loss_cls, magnitude matching the weighting formula) stands.

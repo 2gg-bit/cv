@@ -1,0 +1,59 @@
+{
+  "extensions": {
+    "harness": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/tools/verify_small_bkg_reweight.py",
+      "sha256": "792a3dac902b8227939c2529bfa1f358e0a3ef4251bbcc8cdc56f97db8049cc9"
+    },
+    "in_train_ablation_source_modules": true,
+    "new_module": "ssod.models.roi_heads.small_bkg_reweight",
+    "train_ablation": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/tools/train_ablation.py",
+      "sha256": "b8c1e80ceca66f5c660b01e7005380c5febdd35472f61e9c2cd919aea9bd3c58"
+    }
+  },
+  "local_rank": null,
+  "rank": "0",
+  "repo_root": "/home/xcc/dual_teacher_project/DualTeacher_ablation",
+  "sources": {
+    "ssod": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/__init__.py",
+      "sha256": "84c159b9388b9c89f0c4c6cfbdee2e438f4121ac0bb306b2a74f1c80eae0f973"
+    },
+    "ssod.apis.train": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/apis/train.py",
+      "sha256": "304412ad884daa30a4b9e98d9561e562395d0971046a492109f036b030613e6f"
+    },
+    "ssod.models.dual_teacher": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/dual_teacher.py",
+      "sha256": "fcd896736e67e0b8afc347d97e9035ff91e21a9c53e3897da6938b016de8bbb9"
+    },
+    "ssod.models.progressive_gamma": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/progressive_gamma.py",
+      "sha256": "52e193e3375069c9035e447930cd08abcbf517cf1d3761854a6a4f7ecd1466c7"
+    },
+    "ssod.models.roi_heads.foreground_head": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/roi_heads/foreground_head.py",
+      "sha256": "079889f3b40aa690afc46324c40a70c3769bfe17637c7ff64d71cd2aaf8527e2"
+    },
+    "ssod.models.roi_heads.foreground_roi_head": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/roi_heads/foreground_roi_head.py",
+      "sha256": "6bc0f493fef285ac7e5e8c40066bf953c54a85faf36f23d85a328106dfb9c832"
+    },
+    "ssod.models.roi_heads.small_bkg_reweight": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/models/roi_heads/small_bkg_reweight.py",
+      "sha256": "cd30478c4ea8101e262696aed7cc2973c22366e4297e1ced222c2abe137ade3a"
+    },
+    "ssod.utils.checkpoint": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/utils/checkpoint.py",
+      "sha256": "9f379d52e59f29b5cb27cf8abe5cebd5ed641c31a0443db2564b6f57707fb418"
+    },
+    "ssod.utils.hooks.mean_teacher": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/utils/hooks/mean_teacher.py",
+      "sha256": "9dee62fc3a50d0a3199e7e6841a07cda214dfa9234223c48d159a5c727a3b989"
+    },
+    "ssod.utils.hooks.progressive_gamma": {
+      "path": "/home/xcc/dual_teacher_project/DualTeacher_ablation/ssod/utils/hooks/progressive_gamma.py",
+      "sha256": "116eda4b08beed24dd47b8921a88ca7a25e32a8ae417b6ec3b3edd2e53426657"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+2026-09-29 16:36:41,783 - mmdet.ssod - INFO - [supplement] command: /home/xcc/anaconda3/envs/dt/bin/python tools/verify_reweight_supplement.py --config ablation_configs/fold6_seed678/b0.py --checkpoint work_dirs/ablation_v1/fold6_seed678/b0/iter_32000.pth --out-dir ablation_configs/reweight_small_bkg_20260929_supplement --passes fp32,train --scan-limit 30
+2026-09-29 16:36:41,789 - mmdet.ssod - INFO - [supplement] instrumentation self-test: {"ema_momentum_update_seen": 1, "momentum_update_patched": true, "optimizer_step_seen": 2, "optimizer_zero_grad_seen": 1, "passed": true, "step_patched": true, "step_patched_classes": ["Optimizer", "ASGD", "Adadelta", "Adagrad", "Adam", "AdamW", "Adamax", "LBFGS", "RMSprop", "Rprop", "SGD", "SparseAdam"]}
+2026-09-29 16:36:49,610 - mmdet.ssod - INFO - [supplement] batch 0 tags=['sup1', 'sup2', 'unsup_student', 'unsup_teacher']
+2026-09-29 16:36:54,440 - mmdet.ssod - INFO - [supplement] stage 1: fixed snapshot a9628d57854b584c2fa444163e3d56e24faf1234417e32c47d817acab65cb3c1
+2026-09-29 16:36:54,440 - mmdet.ssod - INFO - [supplement] stage 1: policy=fixed replay=0
+2026-09-29 16:37:06,450 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=493.86
+2026-09-29 16:37:07,972 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=498.82
+2026-09-29 16:37:12,322 - mmdet.ssod - INFO - [supplement] stage 1: policy=fixed replay=1
+2026-09-29 16:37:20,331 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=493.86
+2026-09-29 16:37:20,566 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=498.82
+2026-09-29 16:37:23,879 - mmdet.ssod - INFO - [supplement] stage 1: policy=fixed identical=True first_divergence=null
+2026-09-29 16:37:24,024 - mmdet.ssod - INFO - [supplement] stage 1: policy=entry replay=0
+2026-09-29 16:37:31,909 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=497.25
+2026-09-29 16:37:32,139 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=499.65
+2026-09-29 16:37:35,522 - mmdet.ssod - INFO - [supplement] stage 1: policy=entry replay=1
+2026-09-29 16:37:43,498 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=499.16
+2026-09-29 16:37:43,731 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.81
+2026-09-29 16:37:47,073 - mmdet.ssod - INFO - [supplement] stage 1: policy=entry identical=False first_divergence={"branch": null, "detail": [{"dtype": "int64", "field": "chosen", "max_abs_diff": 57177.0, "n_differing": 248, "n_elements": 248, "shape": [248]}], "fields": ["chosen"], "kind": "sampler_choice", "reason": "value", "seq": 1}
+2026-09-29 16:37:47,220 - mmdet.ssod - INFO - [supplement] stage 1: policy=cuda_only replay=0
+2026-09-29 16:37:54,768 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=497.05
+2026-09-29 16:37:55,004 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=493.09
+2026-09-29 16:37:58,335 - mmdet.ssod - INFO - [supplement] stage 1: policy=cuda_only replay=1
+2026-09-29 16:38:06,243 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=498.23
+2026-09-29 16:38:06,475 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.00
+2026-09-29 16:38:09,812 - mmdet.ssod - INFO - [supplement] stage 1: policy=cuda_only identical=False first_divergence={"branch": null, "detail": [{"dtype": "int64", "field": "chosen", "max_abs_diff": 64243.0, "n_differing": 248, "n_elements": 248, "shape": [248]}], "fields": ["chosen"], "kind": "sampler_choice", "reason": "value", "seq": 1}
+2026-09-29 16:38:09,955 - mmdet.ssod - INFO - [supplement] stage 2: pass=fp32
+2026-09-29 16:38:17,453 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=493.86
+2026-09-29 16:38:17,680 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=498.82
+2026-09-29 16:38:20,941 - mmdet.ssod - INFO - [supplement] stage 2: pass=fp32 variant=b0 loss=0.899541318
+2026-09-29 16:38:28,614 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=493.86
+2026-09-29 16:38:28,843 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=498.82
+2026-09-29 16:38:32,136 - mmdet.ssod - INFO - [supplement] stage 2: pass=fp32 variant=lambda0 loss=0.899541318
+2026-09-29 16:38:39,884 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=493.86
+2026-09-29 16:38:40,122 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=498.82
+2026-09-29 16:38:43,483 - mmdet.ssod - INFO - [supplement] stage 2: pass=fp32 variant=lambda1 loss=0.899544835
+2026-09-29 16:38:53,868 - mmdet.ssod - INFO - [supplement] stage 2: pass=train
+2026-09-29 16:39:01,634 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 16:39:01,787 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 16:39:05,270 - mmdet.ssod - INFO - [supplement] stage 2: pass=train variant=b0 loss=0.906550705
+2026-09-29 16:39:12,539 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 16:39:12,687 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 16:39:16,056 - mmdet.ssod - INFO - [supplement] stage 2: pass=train variant=lambda0 loss=0.906550705
+2026-09-29 16:39:23,560 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 16:39:23,713 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 16:39:27,071 - mmdet.ssod - INFO - [supplement] stage 2: pass=train variant=lambda1 loss=0.906554520
+2026-09-29 16:39:36,524 - mmdet.ssod - INFO - [supplement] stage 3a: head-level gradient
+2026-09-29 16:39:45,871 - mmdet.ssod - INFO - [supplement] stage 3b: backward pass=fp32
+2026-09-29 16:39:53,410 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=493.86
+2026-09-29 16:39:53,602 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=498.82
+2026-09-29 16:39:59,131 - mmdet.ssod - INFO - [supplement] stage 3b: backward pass=train
+2026-09-29 16:40:06,598 - mmdet.ssod - INFO - [ROI-unsup1] pos=10 neg=502 Z0=494.99
+2026-09-29 16:40:06,713 - mmdet.ssod - INFO - [ROI-unsup2] pos=9 neg=503 Z0=496.67
+2026-09-29 16:40:10,775 - mmdet.ssod - INFO - [supplement] verdict: "all three supplementary checks passed"
+2026-09-29 16:40:10,775 - mmdet.ssod - INFO - [supplement] outstanding: []
