@@ -45,10 +45,13 @@ python tools/train_ablation.py --check-init \
   --cfg-options fold=6 percent=3
 python tools/train_ablation.py \
   configs/reproduce/phase3_dual_teacher_ssdd_teacher_routed.py \
-  --check-step --seed 678 --batch-index 0 \
-  --out-dir ablation_configs/teacher_pseudo_routing_acceptance_fold6 \
+  --check-step --seed 678 --batch-index 4 \
+  --out-dir ablation_configs/teacher_pseudo_routing_acceptance_fold6_retry_d4f66fe \
   --cfg-options fold=6 percent=3
 ```
+
+The retry output directory above is intentionally distinct from the first
+attempt, whose failed/incomplete evidence should be preserved.
 
 The step check runs B0, a deterministic B0 replay, and the routed variant on
 the same real training batch. It checks strict Phase1/Phase2 initialization,
