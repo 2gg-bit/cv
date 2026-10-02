@@ -59,6 +59,17 @@ def compare_losses(kind, results, ratio=0.5):
             raise AssertionError("Unexpected change to " + key)
     if kind == "m2" and len(changed) != 2:
         raise IncompleteCheck("M2 must change both positive classification branches; try another --batch-index")
+    if kind == "teacher_pseudo_routing":
+        repeat = results.get("off_repeat", {})
+        if set(repeat) != set(off) or any(not torch.equal(v, repeat[k]) for k, v in off.items()):
+            raise AssertionError("B0 forward replay is not bitwise reproducible")
+        for key, value in off.items():
+            if key.startswith(("sup1_", "sup2_")) and not torch.equal(value, on[key]):
+                raise AssertionError("Pseudo-label routing changed supervised loss: " + key)
+            if not bool(torch.isfinite(on[key]).all()):
+                raise AssertionError("Nonfinite routed loss: " + key)
+        if not any(key.startswith(("unsup1_", "unsup2_")) for key in on):
+            raise AssertionError("No unsupervised loss keys were produced")
     if "identity" in results:
         identity = results["identity"]
         if set(identity) != set(off) or any(
@@ -93,12 +104,16 @@ def run(args, output, report):
     fg = cfg.model.model.roi_head.type == "ForegroundRoIHead"
     giou = cfg.model.model.roi_head.type == "Sup2GIoURoIHead"
     pg_cfg = tc.get("pg")
-    if (cfg.model.type != "DualTeacher" or sum((bool(tc.get("m2_enabled")), fg, giou, bool(pg_cfg))) != 1
+    routing_cfg = tc.get("teacher_pseudo_routing")
+    routing = bool(routing_cfg and routing_cfg.get("enabled", False))
+    if (cfg.model.type != "DualTeacher" or sum((bool(tc.get("m2_enabled")), fg, giou,
+                                                  bool(pg_cfg), routing)) != 1
             or tc.get("m2_force_weight_one") or tc.get("mvdt_enabled") or tc.get("m3_enabled")
             or cfg.model.model.roi_head.bbox_head.get("reweight", {}).get("enable")
             or cfg.get("load_from") or cfg.get("resume_from")):
         raise ValueError("Use a fresh config with exactly one experimental feature")
-    kind = "m2" if tc.get("m2_enabled") else "fg" if fg else "sup2_giou" if giou else "pg_" + pg_cfg.mode
+    kind = ("m2" if tc.get("m2_enabled") else "fg" if fg else "sup2_giou" if giou
+            else "teacher_pseudo_routing" if routing else "pg_" + pg_cfg.mode)
     cfg.dump(str(output / "resolved_config.py"))
     get_root_logger(log_file=str(output / "acceptance.log"), log_level="INFO")
     set_random_seed(args.seed, deterministic=True)
@@ -153,8 +168,10 @@ def run(args, output, report):
         original_log(branch, num_pos, num_neg, normalizer, w_pos)
     model._log_m2_stats = capture
     results = {}
-    modes = ("off", "off_repeat", "on", "identity") if giou else (
+    modes = ("off", "off_repeat", "on") if kind == "teacher_pseudo_routing" else (
+        ("off", "off_repeat", "on", "identity") if giou else (
         ("off", "on") if fg else ("off", "on", "identity"))
+    )
     for mode in modes:
         model.pg = pg
         model.load_state_dict(state, strict=True)
@@ -175,6 +192,11 @@ def run(args, output, report):
                 roi.sup2_giou_weight = 0.0 if mode == "identity" else giou_weight
         model.m2_enabled = kind == "m2" and mode != "off"
         model.m2_force_weight_one = kind == "m2" and mode == "identity"
+        if kind == "teacher_pseudo_routing":
+            model.teacher_pseudo_routing = (
+                {"iou_threshold": float(routing_cfg.get("iou_threshold", 0.5))}
+                if mode == "on" else None)
+            model._last_teacher_pseudo_routing_stats = None
         if pg is not None:
             if mode == "off":
                 model.pg = None
@@ -243,6 +265,17 @@ def run(args, output, report):
                                 scaled_backward=bool(scaler),
                                 scaler_state=scaler.state_dict() if scaler else None,
                                 scaler_updates=0)
+        if kind == "teacher_pseudo_routing":
+            changed = [k for k, v in model.state_dict().items()
+                       if not torch.equal(v.detach().cpu(), state[k])]
+            if changed:
+                raise AssertionError("Routing acceptance changed parameters/buffers: " + repr(changed))
+            report[mode]["state_unchanged"] = True
+            if mode == "on":
+                route = model._last_teacher_pseudo_routing_stats
+                if route is None or route["input_teacher1"] + route["input_teacher2"] == 0:
+                    raise IncompleteCheck("No teacher candidates reached the router; try another --batch-index")
+                report[mode]["teacher_pseudo_routing"] = copy.deepcopy(route)
         del losses, total, inputs
     compare_losses(kind, results, pg.start_ratio if pg is not None else 0.5)
     if kind == "m2" and any(report["on"]["m2"].get(n, {}).get("downweighted", 0) == 0

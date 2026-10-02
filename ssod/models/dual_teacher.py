@@ -1,3 +1,4 @@
+import logging
 import torch
 import numpy as np
 from mmcv.runner.fp16_utils import force_fp32
@@ -11,6 +12,7 @@ from ssod.utils.checkpoint import load_branch_weights
 from .multi_stream_detector import MultiSteamDetector
 from .utils import Transform2D, filter_invalid
 from .progressive_gamma import ProgressiveGamma
+from .teacher_pseudo_router import fuse_teacher_detections
 
 from ssod.utils.ensemble_boxes import nms
 
@@ -64,6 +66,8 @@ class DualTeacher(MultiSteamDetector):
         self.m2_force_weight_one = False
         self.pg = None
         self.sup2_weight = 0.2
+        self.teacher_pseudo_routing = None
+        self._last_teacher_pseudo_routing_stats = None
         if train_cfg is not None:
             self.freeze("teacher1")
             self.freeze("teacher2")
@@ -78,6 +82,18 @@ class DualTeacher(MultiSteamDetector):
             self.sup2_weight = float(self.train_cfg.get("sup2_weight", 0.2))
             if not np.isfinite(self.sup2_weight) or self.sup2_weight <= 0:
                 raise ValueError("sup2_weight must be finite and positive")
+            routing_cfg = self.train_cfg.get("teacher_pseudo_routing")
+            if routing_cfg is not None and bool(routing_cfg.get("enabled", False)):
+                routing_cfg = dict(routing_cfg)
+                routing_cfg.pop("enabled", None)
+                unknown = set(routing_cfg) - {"iou_threshold"}
+                if unknown:
+                    raise ValueError("Unknown teacher_pseudo_routing keys: {}".format(
+                        sorted(unknown)))
+                iou_threshold = float(routing_cfg.get("iou_threshold", 0.5))
+                if not np.isfinite(iou_threshold) or not 0.0 < iou_threshold <= 1.0:
+                    raise ValueError("teacher_pseudo_routing.iou_threshold must be in (0, 1]")
+                self.teacher_pseudo_routing = dict(iou_threshold=iou_threshold)
             if self.train_cfg.get("pg"):
                 self.pg = ProgressiveGamma(
                     base_gamma=self.sup2_weight, unsup_weight=self.unsup_weight,
@@ -290,9 +306,43 @@ class DualTeacher(MultiSteamDetector):
             self.get_det_bboxes('teacher1', img, img_metas, proposals=None, **kwargs)
         feat2, proposal2_list, proposal2_label_list, det2_bboxes, teacher2_info = \
             self.get_det_bboxes('teacher2', img, img_metas, proposals=None, **kwargs)
-        proposal_list, proposal_label_list = fuse_teacher_proposals(
-            proposal1_list, proposal1_label_list, proposal2_list, proposal2_label_list
-        )
+        if self.teacher_pseudo_routing is None:
+            # Preserve the original B0 path exactly when the opt-in experiment
+            # is disabled.
+            proposal_list, proposal_label_list = fuse_teacher_proposals(
+                proposal1_list, proposal1_label_list, proposal2_list, proposal2_label_list
+            )
+        else:
+            proposal_list, proposal_label_list, route_stats = [], [], []
+            for boxes1, labels1, boxes2, labels2 in zip(
+                    proposal1_list, proposal1_label_list,
+                    proposal2_list, proposal2_label_list):
+                routed = fuse_teacher_detections(
+                    boxes1.detach().float().cpu().numpy(),
+                    labels1.detach().cpu().numpy(),
+                    boxes2.detach().float().cpu().numpy(),
+                    labels2.detach().cpu().numpy(),
+                    iou_threshold=self.teacher_pseudo_routing["iou_threshold"],
+                )
+                proposal_list.append(boxes1.new_tensor(routed["boxes"]))
+                proposal_label_list.append(labels1.new_tensor(routed["labels"]))
+                route_stats.append(routed)
+            count = max(len(route_stats), 1)
+            self._last_teacher_pseudo_routing_stats = {
+                "images": len(route_stats),
+                "matched_pairs": sum(item["matched_pairs"] for item in route_stats),
+                "teacher1_only": sum(item["teacher1_only"] for item in route_stats),
+                "teacher2_only": sum(item["teacher2_only"] for item in route_stats),
+                "input_teacher1": sum(item["input_teacher1"] for item in route_stats),
+                "input_teacher2": sum(item["input_teacher2"] for item in route_stats),
+                "output_per_image": sum(len(item["boxes"]) for item in route_stats) / count,
+            }
+            log_every_n(
+                {"teacher_router_" + key: value
+                 for key, value in self._last_teacher_pseudo_routing_stats.items()},
+                n=50,
+                level=logging.INFO,
+            )
 
         reg1_unc = self.compute_uncertainty_with_aug_1(
             feat1, img_metas, proposal_list, proposal_label_list
@@ -324,12 +374,22 @@ class DualTeacher(MultiSteamDetector):
         ]
         teacher2_info["img_metas"] = img_metas
 
-        reg_unc = [(first + second) * 0.5 for first, second in zip(reg1_unc, reg2_unc)]
-        det_bboxes = [
-            torch.cat([bbox, unc], dim=-1) for bbox, unc in zip(proposal_list, reg_unc)
-        ]
-        teacher1_info["det_bboxes"] = det_bboxes
-        teacher2_info["det_bboxes"] = det_bboxes
+        if self.teacher_pseudo_routing is None:
+            reg_unc = [(first + second) * 0.5 for first, second in zip(reg1_unc, reg2_unc)]
+            det_bboxes = [
+                torch.cat([bbox, unc], dim=-1) for bbox, unc in zip(proposal_list, reg_unc)
+            ]
+            teacher1_info["det_bboxes"] = det_bboxes
+            teacher2_info["det_bboxes"] = det_bboxes
+        else:
+            # Keep the common routed boxes/labels, but retain each teacher's
+            # own localization-uncertainty estimate for its student branch.
+            teacher1_info["det_bboxes"] = [
+                torch.cat([bbox, unc], dim=-1) for bbox, unc in zip(proposal_list, reg1_unc)
+            ]
+            teacher2_info["det_bboxes"] = [
+                torch.cat([bbox, unc], dim=-1) for bbox, unc in zip(proposal_list, reg2_unc)
+            ]
 
         return teacher1_info, teacher2_info
 
