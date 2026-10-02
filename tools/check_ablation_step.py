@@ -35,6 +35,31 @@ def flatten_losses(losses):
 
 def compare_losses(kind, results, ratio=0.5):
     off, on = results["off"], results["on"]
+    if kind == "teacher_pseudo_routing":
+        if set(off) != set(on):
+            raise AssertionError("Teacher routing changed the loss keys")
+        repeat = results.get("off_repeat", {})
+        if set(repeat) != set(off) or any(not torch.equal(v, repeat[k]) for k, v in off.items()):
+            raise AssertionError("B0 forward replay is not bitwise reproducible")
+        unsup_keys = [key for key in on if key.startswith(("unsup1_", "unsup2_"))]
+        if not unsup_keys:
+            raise AssertionError("No unsupervised loss keys were produced")
+        unsup_changed = []
+        for key, value in off.items():
+            routed = on[key]
+            if key.startswith(("unsup1_", "unsup2_")):
+                if not bool(torch.isfinite(value).all()) or not bool(torch.isfinite(routed).all()):
+                    raise AssertionError("Nonfinite unsupervised loss: " + key)
+                if not torch.equal(value, routed):
+                    unsup_changed.append(key)
+            elif not torch.equal(value, routed):
+                if key.startswith(("sup1_", "sup2_")):
+                    raise AssertionError("Pseudo-label routing changed supervised loss: " + key)
+                raise AssertionError("Unexpected non-routing loss change: " + key)
+        return dict(supervised_losses_unchanged=True,
+                    unsupervised_losses_finite=True,
+                    unsupervised_changed_keys=sorted(unsup_changed),
+                    unsupervised_changed_count=len(unsup_changed))
     if kind in ("fg", "sup2_giou"):
         expected = ({"sup2_loss_giou:0"} if kind == "sup2_giou" else
                     {"sup1_loss_foreground:0", "sup2_loss_foreground:0"})
@@ -59,17 +84,6 @@ def compare_losses(kind, results, ratio=0.5):
             raise AssertionError("Unexpected change to " + key)
     if kind == "m2" and len(changed) != 2:
         raise IncompleteCheck("M2 must change both positive classification branches; try another --batch-index")
-    if kind == "teacher_pseudo_routing":
-        repeat = results.get("off_repeat", {})
-        if set(repeat) != set(off) or any(not torch.equal(v, repeat[k]) for k, v in off.items()):
-            raise AssertionError("B0 forward replay is not bitwise reproducible")
-        for key, value in off.items():
-            if key.startswith(("sup1_", "sup2_")) and not torch.equal(value, on[key]):
-                raise AssertionError("Pseudo-label routing changed supervised loss: " + key)
-            if not bool(torch.isfinite(on[key]).all()):
-                raise AssertionError("Nonfinite routed loss: " + key)
-        if not any(key.startswith(("unsup1_", "unsup2_")) for key in on):
-            raise AssertionError("No unsupervised loss keys were produced")
     if "identity" in results:
         identity = results["identity"]
         if set(identity) != set(off) or any(
@@ -96,6 +110,8 @@ def run(args, output, report):
     if not torch.cuda.is_available():
         raise RuntimeError("Run this check on the training machine with CUDA")
     cfg = Config.fromfile(args.config)
+    if args.cfg_options:
+        cfg.merge_from_dict(args.cfg_options)
     if cfg.get("seed") is not None and cfg.seed != args.seed:
         raise ValueError("Use the seed of the frozen B0 config")
     cfg.seed, cfg.work_dir = args.seed, str(output)
@@ -128,6 +144,7 @@ def run(args, output, report):
                     getattr(model, n).roi_head.sup2_giou_weight <= 0 for n in model.submodules):
         raise ValueError("GIoU experiment must enable a positive auxiliary weight")
     report.update(experiment=kind, config_sha256=file_hash(args.config),
+                  cfg_options=copy.deepcopy(args.cfg_options or {}),
                   seed=args.seed, batch_index=args.batch_index,
                   initialization={str(Path(p).resolve()): file_hash(p)
                                   for p in (model.load1_from, model.load2_from)})
@@ -273,11 +290,14 @@ def run(args, output, report):
             report[mode]["state_unchanged"] = True
             if mode == "on":
                 route = model._last_teacher_pseudo_routing_stats
-                if route is None or route["input_teacher1"] + route["input_teacher2"] == 0:
+                if (route is None or route["input_teacher1"] + route["input_teacher2"] == 0
+                        or route["output_per_image"] <= 0):
                     raise IncompleteCheck("No teacher candidates reached the router; try another --batch-index")
                 report[mode]["teacher_pseudo_routing"] = copy.deepcopy(route)
         del losses, total, inputs
-    compare_losses(kind, results, pg.start_ratio if pg is not None else 0.5)
+    loss_comparison = compare_losses(kind, results, pg.start_ratio if pg is not None else 0.5)
+    if loss_comparison is not None:
+        report["loss_comparison"] = loss_comparison
     if kind == "m2" and any(report["on"]["m2"].get(n, {}).get("downweighted", 0) == 0
                            for n in ("unsup1", "unsup2")):
         raise IncompleteCheck("No downweighted positives in one M2 branch")
@@ -286,11 +306,15 @@ def run(args, output, report):
 
 
 def main():
+    from mmcv import DictAction
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("config")
     parser.add_argument("--out-dir", required=True, help="New directory; never reused")
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--batch-index", type=int, default=0)
+    parser.add_argument("--cfg-options", nargs="+", action=DictAction,
+                        help="Override config values before template variables are resolved")
     args = parser.parse_args()
     if args.batch_index < 0:
         parser.error("--batch-index must be nonnegative")

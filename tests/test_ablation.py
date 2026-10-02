@@ -182,6 +182,49 @@ def test_acceptance_detects_wrong_routing_and_uncovered_m2():
         checker.compare_losses("m2", dict(off=off, on=off, identity=off))
 
 
+def test_teacher_pseudo_routing_allows_unsup_changes_and_guards_other_losses():
+    off = {k: torch.tensor(v) for k, v in {
+        "sup1_loss_cls:0": 0.4,
+        "sup2_loss_bbox:0": 0.3,
+        "unsup1_loss_cls:0": 0.2,
+        "unsup2_loss_bbox:0": 0.1,
+    }.items()}
+    on = dict(off)
+    on["unsup1_loss_cls:0"] = torch.tensor(0.25)
+    on["unsup2_loss_bbox:0"] = torch.tensor(0.08)
+    result = checker.compare_losses(
+        "teacher_pseudo_routing",
+        dict(off=off, off_repeat=copy.deepcopy(off), on=on),
+    )
+    assert result["supervised_losses_unchanged"]
+    assert result["unsupervised_losses_finite"]
+    assert result["unsupervised_changed_keys"] == ["unsup1_loss_cls:0", "unsup2_loss_bbox:0"]
+
+    bad = copy.deepcopy(on)
+    bad["sup1_loss_cls:0"] += 1e-6
+    with pytest.raises(AssertionError, match="changed supervised loss"):
+        checker.compare_losses(
+            "teacher_pseudo_routing",
+            dict(off=off, off_repeat=copy.deepcopy(off), on=bad),
+        )
+
+    bad = copy.deepcopy(on)
+    bad["unsup2_loss_bbox:0"] = torch.tensor(float("inf"))
+    with pytest.raises(AssertionError, match="Nonfinite unsupervised loss"):
+        checker.compare_losses(
+            "teacher_pseudo_routing",
+            dict(off=off, off_repeat=copy.deepcopy(off), on=bad),
+        )
+
+    bad_repeat = copy.deepcopy(off)
+    bad_repeat["unsup1_loss_cls:0"] += 1e-6
+    with pytest.raises(AssertionError, match="B0 forward replay"):
+        checker.compare_losses(
+            "teacher_pseudo_routing",
+            dict(off=off, off_repeat=bad_repeat, on=on),
+        )
+
+
 def test_new_configs_preserve_original_losses_and_isolate_experiments(tmp_path):
     cfg = baseline()
     bbox = cfg["model"]["model"]["roi_head"]["bbox_head"]

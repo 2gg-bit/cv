@@ -41,19 +41,24 @@ From the actual training checkout, with its normal `dt` environment:
 ```bash
 python tools/train_ablation.py --check-source-only
 python tools/train_ablation.py --check-init \
-  configs/reproduce/phase3_dual_teacher_ssdd_teacher_routed.py
+  configs/reproduce/phase3_dual_teacher_ssdd_teacher_routed.py \
+  --cfg-options fold=6 percent=3
 python tools/train_ablation.py \
   configs/reproduce/phase3_dual_teacher_ssdd_teacher_routed.py \
   --check-step --seed 678 --batch-index 0 \
-  --out-dir ablation_configs/teacher_pseudo_routing_acceptance_fold6
+  --out-dir ablation_configs/teacher_pseudo_routing_acceptance_fold6 \
+  --cfg-options fold=6 percent=3
 ```
 
 The step check runs B0, a deterministic B0 replay, and the routed variant on
 the same real training batch. It checks strict Phase1/Phase2 initialization,
-bitwise B0 replay, unchanged supervised losses, finite routed losses, nonempty
-teacher inputs, no teacher gradients, unchanged parameters/buffers, and zero
-optimizer/EMA updates. If the selected batch contains no pseudo-labels, the
-result is `incomplete`; try a different batch index in a new output directory.
+bitwise B0 replay, unchanged supervised losses, finite unsupervised losses,
+nonempty routed teacher inputs and outputs, no teacher gradients, unchanged
+parameters/buffers, and zero optimizer/EMA updates. Unsupervised losses are
+allowed to differ because pseudo-label targets and teacher-specific uncertainty
+are what this experiment changes; the result records which unsupervised loss
+keys changed. If the selected batch contains no teacher detections, the result
+is `incomplete`; try a different batch index in a new output directory.
 
 The NumPy-only matching and fusion tests can run on a development machine
 without MMDetection or CUDA:
