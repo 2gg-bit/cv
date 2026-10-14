@@ -24,6 +24,11 @@ import numpy as np
 import json
 import os
 
+try:
+    from split_ssdd_paper import validate_ssdd_training_annotations
+except ImportError:
+    from tools.dataset.split_ssdd_paper import validate_ssdd_training_annotations
+
 
 def prepare_coco_data(seed=1, percent=10.0, version=2017, seed_offset=0):
     """Prepare COCO dataset for Semi-supervised learning
@@ -69,6 +74,7 @@ def prepare_coco_data(seed=1, percent=10.0, version=2017, seed_offset=0):
     anno = json.load(
         open(os.path.join(COCOANNODIR, "train.json"))
     )
+    validate_ssdd_training_annotations(anno)
 
     image_list = anno["images"]
     # labeled_tot = int(percent / 100.0 * len(image_list))

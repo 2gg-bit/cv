@@ -11,11 +11,16 @@ Usage:
     python prepare_data.py \
         --optical-ann /path/to/ShipRSImageNet/annotations.json \
         --optical-img /path/to/ShipRSImageNet/images/ \
-        --sar-ann /path/to/SSDD/annotations/train.json \
+        --sar-ann /path/to/SSDD/annotations/full.json \
         --sar-img /path/to/SSDD/JPEGImages/ \
-        --sar-test-ann /path/to/SSDD/annotations/test.json \
+        --paper-ssdd-split \
         --output-dir ./data \
         --shots 1 3 5 10
+
+With --paper-ssdd-split, the full SSDD COCO annotation is divided exactly as
+described in the Dual Teacher paper (numeric image indices ending in 1 or 9
+are test; the remaining images are training). Few-shot samples are drawn only
+from the resulting training split.
 """
 
 import argparse
@@ -24,6 +29,12 @@ import os
 import shutil
 import numpy as np
 from copy import deepcopy
+
+from tools.dataset.split_ssdd_paper import (
+    split_file,
+    validate_ssdd_paper_split,
+    validate_ssdd_training_annotations,
+)
 
 
 def load_json(path):
@@ -71,7 +82,8 @@ def prepare_optical_annotations(optical_ann_path, output_dir):
     return anno
 
 
-def prepare_ssdd_fewshot(sar_ann_path, output_dir, shots, num_folds=5):
+def prepare_ssdd_fewshot(sar_ann_path, output_dir, shots, num_folds=5,
+                         save_train_copy=True):
     """
     Step 2: Generate few-shot SSDD splits.
     For each shot count and fold:
@@ -81,6 +93,7 @@ def prepare_ssdd_fewshot(sar_ann_path, output_dir, shots, num_folds=5):
     print(f"\n[Step 2] Preparing SSDD few-shot splits (shots={shots})...")
     anno = load_json(sar_ann_path)
     anno = normalize_categories(anno)
+    validate_ssdd_training_annotations(anno)
 
     images = anno["images"]
     annotations = anno["annotations"]
@@ -138,8 +151,10 @@ def prepare_ssdd_fewshot(sar_ann_path, output_dir, shots, num_folds=5):
             print(f"  Fold {fold}, {shot}-shot: "
                   f"{len(labeled_images)} labeled / {len(unlabeled_images)} unlabeled")
 
-    # Also save full training annotation (for reference)
-    save_json(anno, os.path.join(output_dir, "ssdd", "annotations", "train.json"))
+    # Also save full training annotation (for reference) when the split was
+    # supplied externally. In paper-split mode train.json is already frozen.
+    if save_train_copy:
+        save_json(anno, os.path.join(output_dir, "ssdd", "annotations", "train.json"))
 
 
 def prepare_sar_test(sar_test_ann_path, output_dir):
@@ -161,6 +176,7 @@ def prepare_do_union_dl(optical_anno, sar_ann_path, output_dir, shots, num_folds
     print(f"\n[Step 4] Preparing Do ∪ Dl (optical + few-shot SAR)...")
     sar_anno = load_json(sar_ann_path)
     sar_anno = normalize_categories(sar_anno)
+    validate_ssdd_training_annotations(sar_anno)
 
     opt_images = optical_anno["images"]
     opt_annotations = optical_anno["annotations"]
@@ -272,11 +288,17 @@ def main():
     parser.add_argument("--optical-img", type=str, required=True,
                         help="Path to ShipRSImageNet image directory")
     parser.add_argument("--sar-ann", type=str, required=True,
-                        help="Path to SSDD training annotation file (train.json)")
+                        help="Path to SSDD COCO annotations; use full.json with "
+                             "--paper-ssdd-split, otherwise use train.json")
     parser.add_argument("--sar-img", type=str, required=True,
                         help="Path to SSDD image directory (JPEGImages/)")
     parser.add_argument("--sar-test-ann", type=str, default=None,
-                        help="Path to SSDD test annotation file")
+                        help="Path to SSDD test annotation file (must follow paper split)")
+    parser.add_argument("--paper-ssdd-split", action="store_true",
+                        help="Treat --sar-ann as the full 1160-image COCO file and split "
+                             "by the paper's index-suffix 1/9 rule before sampling few-shot data")
+    parser.add_argument("--overwrite-paper-split", action="store_true",
+                        help="Allow --paper-ssdd-split to replace existing train.json/test.json")
     parser.add_argument("--output-dir", type=str, default="./data",
                         help="Output data directory")
     parser.add_argument("--shots", type=int, nargs="+", default=[1, 3, 5, 10],
@@ -284,6 +306,11 @@ def main():
     parser.add_argument("--num-folds", type=int, default=5,
                         help="Number of random folds per shot count")
     args = parser.parse_args()
+
+    if args.paper_ssdd_split and args.sar_test_ann:
+        parser.error("--sar-test-ann cannot be combined with --paper-ssdd-split")
+    if args.overwrite_paper_split and not args.paper_ssdd_split:
+        parser.error("--overwrite-paper-split requires --paper-ssdd-split")
 
     print("=" * 60)
     print("Dual Teacher Data Preparation")
@@ -296,17 +323,53 @@ def main():
     output_dir = os.path.abspath(args.output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
+    sar_ann_path = os.path.abspath(args.sar_ann)
+    sar_test_ann_path = os.path.abspath(args.sar_test_ann) if args.sar_test_ann else None
+    paper_split_written = False
+    if args.paper_ssdd_split:
+        print("\n[SSDD paper split] Splitting full COCO annotation by image-index suffix...")
+        ssdd_ann_dir = os.path.join(output_dir, "ssdd", "annotations")
+        train_path = os.path.join(ssdd_ann_dir, "train.json")
+        test_path = os.path.join(ssdd_ann_dir, "test.json")
+        if not args.overwrite_paper_split and (os.path.exists(train_path) or os.path.exists(test_path)):
+            parser.error(
+                "Refusing to replace existing SSDD train.json/test.json; "
+                "use --overwrite-paper-split explicitly"
+            )
+        split_file(
+            sar_ann_path,
+            ssdd_ann_dir,
+            overwrite=args.overwrite_paper_split,
+            require_canonical_counts=True,
+        )
+        sar_ann_path = train_path
+        sar_test_ann_path = test_path
+        paper_split_written = True
+    elif sar_test_ann_path:
+        train_anno = normalize_categories(load_json(sar_ann_path))
+        test_anno = normalize_categories(load_json(sar_test_ann_path))
+        validate_ssdd_paper_split(train_anno, test_anno, require_canonical_counts=True)
+    else:
+        validate_ssdd_training_annotations(normalize_categories(load_json(sar_ann_path)))
+
     # Step 1: Optical annotations
     optical_anno = prepare_optical_annotations(args.optical_ann, output_dir)
 
     # Step 2: SSDD few-shot splits
-    prepare_ssdd_fewshot(args.sar_ann, output_dir, args.shots, args.num_folds)
+    prepare_ssdd_fewshot(
+        sar_ann_path,
+        output_dir,
+        args.shots,
+        args.num_folds,
+        save_train_copy=not paper_split_written,
+    )
 
     # Step 3: SAR test
-    prepare_sar_test(args.sar_test_ann, output_dir)
+    if not paper_split_written:
+        prepare_sar_test(sar_test_ann_path, output_dir)
 
     # Step 4: Do ∪ Dl concatenation
-    prepare_do_union_dl(optical_anno, args.sar_ann, output_dir, args.shots, args.num_folds)
+    prepare_do_union_dl(optical_anno, sar_ann_path, output_dir, args.shots, args.num_folds)
 
     # Step 5: Symlinks
     create_symlinks(args.optical_img, args.sar_img, output_dir)
